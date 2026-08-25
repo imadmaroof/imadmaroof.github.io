@@ -1089,3 +1089,152 @@ p:last-child { margin-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   .pipe-back, .pipe-back.is-warping { animation: none; transform: none; }
 }
+
+/* --------------------------------------------------------------------------
+   15. HUD — LIST VIEW / RESUME shortcuts
+   Two links that must stay reachable from every page, so they are given a
+   little more weight than the rest of the nav.
+   -------------------------------------------------------------------------- */
+.hud__nav a.hud__key {
+  background: var(--pipe-lo);
+  color: var(--gold-hi);
+}
+.hud__nav a.hud__key:hover { background: var(--pipe); color: var(--text-invert); }
+.hud__nav a[aria-current="page"] {
+  background: var(--gold);
+  color: var(--ink);
+  box-shadow: inset 2px 2px 0 var(--gold-hi), 3px 3px 0 rgba(0,0,0,.35);
+}
+
+/* The nav is tight once there are five items in it. Below 480px "LIST VIEW"
+   drops to "LIST", and below 380px the SFX button goes the same way the coin
+   pill already does — it is decoration, the navigation is not. */
+@media (max-width: 480px) {
+  .hud__wide { display: none; }
+}
+@media (max-width: 380px) {
+  .hud__toggle { display: none; }
+}
+
+/* --------------------------------------------------------------------------
+   16. PLAIN LIST PAGE (pages/all-projects.html)
+   The no-animation bypass. Everything here is deliberately flat: no hover
+   lifts, no transitions, no decorative motion. It should be scannable top to
+   bottom in a few seconds and print cleanly.
+   -------------------------------------------------------------------------- */
+.page--plain { padding-bottom: 40px; }
+
+/* Belt and braces: this page loads no site.js, but if any shared rule ever
+   grows a transition, it stops at the door. */
+.page--plain *,
+.page--plain *::before,
+.page--plain *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.page--plain .btn:hover { transform: none; }
+
+.plainlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+
+.plainlist__item {
+  position: relative;
+  background: var(--panel);
+  border: var(--bevel) solid var(--ink);
+  box-shadow:
+    inset  var(--bevel)  var(--bevel) 0 var(--panel-hi),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--panel-lo),
+    var(--drop) var(--drop) 0 rgba(0, 0, 0, .32);
+  padding: 20px 22px;
+}
+
+/* Locked / unpublished entries stay in the list — a reader should be able to
+   see what is coming — but read as clearly secondary. */
+.plainlist__item--locked {
+  background: var(--panel-lo);
+  box-shadow:
+    inset  var(--bevel)  var(--bevel) 0 rgba(255,255,255,.35),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 rgba(0,0,0,.12),
+    var(--drop) var(--drop) 0 rgba(0, 0, 0, .22);
+}
+
+.plainlist__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.plainlist__world {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+  padding: 7px 9px;
+  color: var(--text-invert);
+  background: var(--panel-alt);
+  border: 2px solid var(--ink);
+}
+
+/* The one place the pixel font is allowed on this page: the project name.
+   Everything below it is body sans-serif so it stays fast to read. */
+.plainlist__title {
+  font-size: clamp(12px, 2.2vw, 15px);
+  margin: 0;
+}
+
+.plainlist__flag {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  line-height: 1;
+  padding: 6px 8px;
+  color: var(--text-invert);
+  background: var(--locked-lo);
+  border: 2px solid var(--ink);
+}
+
+.plainlist__blurb {
+  margin: 0 0 10px;
+  color: var(--text);
+}
+
+.plainlist__meta {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+.plainlist__metakey {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--text);
+  margin-right: 6px;
+}
+
+.plainlist__links { margin-top: 14px; gap: 10px; }
+.plainlist__item--locked .plainlist__links { display: none; }
+
+.plainlist__empty { margin-top: 18px; }
+
+@media (max-width: 560px) {
+  .plainlist__item { padding: 16px 15px; }
+  .plainlist__links { gap: 8px; }
+  .plainlist__links .btn { font-size: 9px; padding: 10px 12px; }
+}
+
+/* --- 16a. print: hand someone a paper copy of the list -------------------- */
+@media print {
+  .page--plain { background: #fff; padding: 0; }
+  .hud, .site-foot, .level-banner__rule { display: none; }
+  .plainlist__item {
+    box-shadow: none;
+    border: 1px solid #000;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .plainlist__links { display: none; }
+}

@@ -33,7 +33,8 @@
   <span class="hud__spacer"></span>
   <nav class="hud__nav" aria-label="Main">
     <a href="../index.html" data-warp>MAP</a>
-    <a href="#resume">RESUME</a>
+    <a class="hud__key" href="all-projects.html">LIST<span class="hud__wide"> VIEW</span></a>
+    <a class="hud__key" href="/resume.pdf">RESUME</a>
     <a href="contact.html" data-warp>CONTACT</a>
     <button type="button" class="hud__toggle" data-sound-toggle aria-pressed="false">SFX OFF</button>
   </nav>
@@ -105,11 +106,12 @@
     <section class="panel panel--riveted" id="resume" aria-labelledby="a-resume">
       <span class="panel__label" id="a-resume">RESUME</span>
       <p>
-        Placeholder note about your CV. Drop a PDF in the repo root and point
-        the button below at it, e.g. <code>../resume.pdf</code>.
+        Placeholder note about your CV. Drop a PDF named <code>resume.pdf</code>
+        in the repo root and both this button and the RESUME link in the HUD
+        start working &mdash; they already point at <code>/resume.pdf</code>.
       </p>
       <div class="link-row">
-        <a class="btn btn--gold" href="#" rel="noopener">DOWNLOAD CV [PDF]</a>
+        <a class="btn btn--gold" href="/resume.pdf" rel="noopener">DOWNLOAD CV [PDF]</a>
         <a class="btn" href="#" rel="noopener">LINKEDIN &gt;&gt;</a>
         <a class="btn" href="#" rel="noopener">GITHUB &gt;&gt;</a>
       </div>

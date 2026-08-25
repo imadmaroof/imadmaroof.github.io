@@ -51,6 +51,7 @@ it, so prefer one of the commands above.
 │   └── world-template.html     duplicate this per project
 ├── pages/
 │   ├── about.html              about + resume
+│   ├── all-projects.html       plain no-animation list of every project
 │   └── contact.html            the castle at the end of the map
 ├── .nojekyll                   tells GitHub Pages to serve the files as-is
 └── README.md
@@ -123,11 +124,49 @@ The constants at the top of `js/map.js` control the layout:
 ### Your name and links
 
 `YOUR NAME` appears in the HUD of every page, and the nav links point at
-`pages/about.html`, `pages/about.html#resume` and `pages/contact.html`.
-Search for `YOUR <span>NAME</span>` and `EDIT` across the HTML files.
+`pages/all-projects.html`, `/resume.pdf`, `pages/about.html` and
+`pages/contact.html`. Search for `YOUR <span>NAME</span>` and `EDIT` across
+the HTML files.
 
-For a resume, drop a PDF in the repo root and point the `DOWNLOAD CV` button
-in `pages/about.html` at it.
+### Your resume
+
+The `RESUME` link in the HUD and the `DOWNLOAD CV` button on the about page
+both already point at `/resume.pdf`. Drop a PDF with that exact name in the
+repo root and both start working — there is nothing to wire up.
+
+The path is root-absolute on purpose: that is what GitHub Pages serves for a
+`username.github.io` site. It resolves correctly under `python3 -m http.server`
+started from the repo root, but *not* when opening the files straight off the
+filesystem with `file://` — the rest of the site works fine there, only this
+one link needs a server.
+
+---
+
+## The list view (recruiter bypass)
+
+`pages/all-projects.html` is the plain-clothes version of the whole
+portfolio: every project in one column with its title, summary, tech stack
+and links, readable in a few seconds. A `LIST VIEW` link sits in the HUD of
+every page so it is never more than one click away.
+
+It is deliberately the least decorated page on the site:
+
+* **No animation.** It does not load `js/site.js` — the file that runs the
+  fade-from-black arrival and the pipe-warp between pages. Every link on it
+  navigates immediately.
+* **No second copy of the content.** It renders from the same `PROJECTS`
+  array in `js/projects.js` that builds the map, so it cannot drift out of
+  sync. Add a project and it shows up in both places.
+* **Prints cleanly**, if someone wants it on paper.
+
+Two optional fields in `js/projects.js` feed this page and nothing else:
+
+```js
+tech:  ['Python', 'PostgreSQL'],
+links: [{ label: 'REPO', href: 'https://github.com/you/my-project' }]
+```
+
+Leave either out and that row is simply skipped. The map never reads them.
 
 ---
 

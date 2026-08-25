@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ======================================================================
+     ALL PROJECTS — the plain list / recruiter bypass
+     ----------------------------------------------------------------------
+     Deliberately the least decorated page on the site. Someone who does not
+     want to walk an overworld should be able to land here and have the whole
+     picture in a few seconds.
+
+     Three rules this page keeps, on purpose:
+
+       1. NO ANIMATION. js/site.js is NOT loaded here — it is what runs the
+          fade-up-from-black arrival and the pipe-warp between pages. Every
+          link on this page is a plain link that navigates immediately.
+       2. ONE COLUMN, top to bottom. No map, no grid, no hover reveals.
+       3. SAME DATA. Everything below is rendered from the PROJECTS array in
+          js/projects.js — the same array that builds the map. There is no
+          second copy of the content to keep in sync.
+
+     EDIT: your name in the HUD and in <title>. The project rows themselves
+     come from js/projects.js, so there is nothing to hand-write here.
+     ====================================================================== -->
+
+<title>ALL PROJECTS &mdash; Your Name</title>
+<meta name="description" content="Every project in one plain list — title, summary, tech stack and links.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%235c94fc'/%3E%3Crect x='2' y='3' width='12' height='11' fill='%23241c2c'/%3E%3Crect x='3' y='4' width='10' height='9' fill='%2339c5bb'/%3E%3Crect x='5' y='7' width='2' height='3' fill='%23fff'/%3E%3Crect x='9' y='7' width='2' height='3' fill='%23fff'/%3E%3C/svg%3E">
+</head>
+
+<body class="page page--plain">
+
+<!-- ---- HUD ------------------------------------------------------------
+     Same bar as everywhere else, minus the coin counter and the SFX button:
+     both are driven by js/site.js, which this page does not load. The links
+     have no data-warp attribute, so they navigate instantly.
+     -------------------------------------------------------------------- -->
+<header class="hud">
+  <a class="hud__name" href="../index.html">YOUR <span>NAME</span></a>
+
+  <span class="hud__spacer"></span>
+
+  <nav class="hud__nav" aria-label="Main">
+    <a href="../index.html">MAP</a>
+    <a class="hud__key" href="all-projects.html" aria-current="page">LIST<span class="hud__wide"> VIEW</span></a>
+    <a class="hud__key" href="/resume.pdf">RESUME</a>
+    <a href="about.html">ABOUT</a>
+    <a href="contact.html">CONTACT</a>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <!-- The big gold line is the <h1> here. On a world page that slot holds the
+       level number, but this page's identity is the list itself. -->
+  <div class="level-banner">
+    <h1 class="level-banner__world">ALL PROJECTS</h1>
+    <p class="level-banner__title">EVERY WORLD, ONE PAGE</p>
+    <p class="level-banner__blurb">
+      Every project on one page — no map, no animation. Prefer to walk it
+      instead? <a href="../index.html">Open the overworld</a>.
+    </p>
+    <div class="level-banner__rule" aria-hidden="true"></div>
+  </div>
+
+  <!-- The list is rendered from js/projects.js by the script at the bottom
+       of this file. This is the only JS on the page. -->
+  <ol class="plainlist" id="plainlist"></ol>
+
+  <noscript>
+    <div class="panel panel--riveted plainlist__empty">
+      <span class="panel__label">JAVASCRIPT IS OFF</span>
+      <p>
+        This list is generated from a single data file so it can never drift
+        out of sync with the map. With scripting disabled there is nothing to
+        generate it from.
+      </p>
+      <p>
+        The individual project pages are plain HTML and still work &mdash;
+        they are linked from <a href="../index.html">the overworld map</a>.
+      </p>
+    </div>
+  </noscript>
+
+  <p class="site-foot">
+    <a href="../index.html">&lt;&lt; BACK TO THE OVERWORLD</a>
+  </p>
+</main>
+
+<script src="../js/projects.js"></script>
+<script>
+/* --------------------------------------------------------------------------
+   Render PROJECTS as a flat list. No animation, no transitions, no state.
+   Runs once, synchronously, and then this page is done.
+
+   Note the path fix-up: PROJECTS stores `page` relative to the SITE ROOT
+   (index.html lives there), but this file sits in /pages/, so every project
+   link needs one level up. That is the only transformation applied here.
+   -------------------------------------------------------------------------- */
+(function () {
+  'use strict';
+
+  var list = document.getElementById('plainlist');
+  var projects = window.PROJECTS || [];
+  if (!list) return;
+
+  function esc(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /* Root-relative -> relative to /pages/. Absolute URLs and anchors are
+     left exactly as they are. */
+  function fromPages(href) {
+    if (!href) return '';
+    if (/^(https?:)?\/\//i.test(href) || href.charAt(0) === '/' ||
+        href.charAt(0) === '#' || href.indexOf('mailto:') === 0) return href;
+    return '../' + href;
+  }
+
+  if (!projects.length) {
+    list.outerHTML =
+      '<div class="panel panel--riveted plainlist__empty">' +
+        '<span class="panel__label">NOTHING HERE YET</span>' +
+        '<p>No projects have been added to <code>js/projects.js</code> yet.</p>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+
+  for (var i = 0; i < projects.length; i++) {
+    var p = projects[i];
+    var tech = p.tech || [];
+    var links = p.links || [];
+
+    html += '<li class="plainlist__item' + (p.locked ? ' plainlist__item--locked' : '') + '">';
+
+    /* --- heading: world tag + title --------------------------------- */
+    html += '<div class="plainlist__head">' +
+              '<span class="plainlist__world">' + esc(p.world) + '</span>' +
+              '<h2 class="plainlist__title">' + esc(p.title) + '</h2>' +
+              (p.locked ? '<span class="plainlist__flag">NOT PUBLISHED YET</span>' : '') +
+            '</div>';
+
+    /* --- one-line summary ------------------------------------------- */
+    if (p.blurb) {
+      html += '<p class="plainlist__blurb">' + esc(p.blurb) + '</p>';
+    }
+
+    /* --- tech stack -------------------------------------------------- */
+    if (tech.length) {
+      html += '<p class="plainlist__meta"><span class="plainlist__metakey">TECH</span> ' +
+              esc(tech.join(', ')) + '</p>';
+    }
+
+    /* --- links: the project page first, then any external ones -------- */
+    var row = '';
+    if (!p.locked && p.page) {
+      row += '<a class="btn btn--green" href="' + esc(fromPages(p.page)) + '">' +
+             'READ MORE &gt;&gt;</a>';
+    }
+    for (var j = 0; j < links.length; j++) {
+      var l = links[j] || {};
+      if (!l.label) continue;
+      row += '<a class="btn" href="' + esc(l.href || '#') + '" rel="noopener">' +
+             esc(l.label) + ' &gt;&gt;</a>';
+    }
+    if (row) html += '<div class="link-row plainlist__links">' + row + '</div>';
+
+    html += '</li>';
+  }
+
+  list.innerHTML = html;
+}());
+</script>
+</body>
+</html>

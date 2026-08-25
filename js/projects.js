@@ -10,6 +10,7 @@
      * draws the winding path between the nodes
      * scatters the coins between them
      * builds the mobile level-select list
+     * builds the plain, no-animation list at pages/all-projects.html
      * wires up mouse, keyboard and the pipe-warp transition
 
    --------------------------------------------------------------------------
@@ -31,7 +32,9 @@
             title:  'MY PROJECT',
             blurb:  'One sentence about it.',
             page:   'worlds/my-project.html',
-            locked: false
+            locked: false,
+            tech:   ['Python', 'PostgreSQL'],
+            links:  [{ label: 'REPO', href: 'https://github.com/you/my-project' }]
           }
 
    That's it. The map grows, the path re-routes, the node appears.
@@ -56,6 +59,20 @@
                             tease work in progress.
                     false -> renders as a green pipe you can enter.
 
+   ---- optional, used by pages/all-projects.html ----------------------------
+
+   tech    string[] Tech stack, one entry per item, e.g. ['Go', 'Redis'].
+                    Rendered as chips on the plain list page. Omit or leave
+                    empty and the TECH line is skipped entirely.
+   links   object[] External links, each { label: 'REPO', href: 'https://…' }.
+                    Rendered as buttons on the plain list page. Omit or leave
+                    empty and the links row is skipped entirely.
+
+   Both are OPTIONAL. The overworld map (js/map.js) never reads them, so a
+   project entry without them still works exactly as before — they exist so
+   the no-animation list view can show a stack and links without you having
+   to repeat yourself in the world page.
+
    --------------------------------------------------------------------------
    NOTES
    --------------------------------------------------------------------------
@@ -76,7 +93,12 @@ const PROJECTS = [
     title:  'PROJECT TITLE',
     blurb:  'Placeholder blurb. One sentence about what this project is and why it exists.',
     page:   'worlds/world-template.html',
-    locked: false
+    locked: false,
+    tech:   ['PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER'],
+    links:  [
+      { label: 'REPO',      href: '#' },
+      { label: 'LIVE DEMO', href: '#' }
+    ]
   },
 
   /* ---- WORLD 2 ---------------------------------------------------------- */
@@ -86,7 +108,12 @@ const PROJECTS = [
     title:  'PROJECT TITLE',
     blurb:  'Placeholder blurb. Swap this out for a real one-line summary later.',
     page:   'worlds/world-template.html',
-    locked: false
+    locked: false,
+    tech:   ['PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER'],
+    links:  [
+      { label: 'REPO',      href: '#' },
+      { label: 'LIVE DEMO', href: '#' }
+    ]
   },
 
   /* ---- WORLD 3 ---------------------------------------------------------- */
@@ -96,7 +123,12 @@ const PROJECTS = [
     title:  'PROJECT TITLE',
     blurb:  'Placeholder blurb. Filler text standing in for a real description.',
     page:   'worlds/world-template.html',
-    locked: false
+    locked: false,
+    tech:   ['PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER'],
+    links:  [
+      { label: 'REPO',      href: '#' },
+      { label: 'LIVE DEMO', href: '#' }
+    ]
   },
 
   /* ---- WORLD 4 — locked example ----------------------------------------- */
@@ -106,7 +138,9 @@ const PROJECTS = [
     title:  'COMING SOON',
     blurb:  'Placeholder blurb for a project that is not published yet.',
     page:   '',
-    locked: true
+    locked: true,
+    tech:   ['PLACEHOLDER', 'PLACEHOLDER'],
+    links:  []
   },
 
   /* ---- WORLD 5 — locked example ----------------------------------------- */
@@ -116,7 +150,9 @@ const PROJECTS = [
     title:  'COMING SOON',
     blurb:  'Placeholder blurb for a project that is not published yet.',
     page:   '',
-    locked: true
+    locked: true,
+    tech:   ['PLACEHOLDER', 'PLACEHOLDER'],
+    links:  []
   },
 
   /* ---- WORLD 6 — locked example ----------------------------------------- */
@@ -126,7 +162,9 @@ const PROJECTS = [
     title:  'COMING SOON',
     blurb:  'Placeholder blurb for a project that is not published yet.',
     page:   '',
-    locked: true
+    locked: true,
+    tech:   ['PLACEHOLDER', 'PLACEHOLDER'],
+    links:  []
   }
 
 ];
