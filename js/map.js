@@ -58,6 +58,7 @@
   var coinEls  = [];   // {x, y, el, taken}
   var cursor   = 0;    // index into points: where the sprite currently stands
   var selected = 0;    // index into stops
+  var entering = false;// the pipe dive / warp has begun; the page is leaving
   var started  = false;// has the player left the start of the path yet?
   var busy     = false;
   var width    = 0;
@@ -272,32 +273,60 @@
     walkToPoint(stops[stopIndex].point, done);
   }
 
-  /* Walk back to the head of the trail — the spot the sprite idles on before
-     you have picked any world. Nothing is selected while standing there. */
-  function goHome(done) {
-    walkToPoint(0, function () {
-      started = false;
-      paintSelection();
-      if (done) done();
-    });
+  /* The sprite's live pixel position, and the point index it is currently
+     heading for. Between frames it sits somewhere on the segment joining
+     points[cursor] and points[aim]. */
+  var pos      = null;
+  var aim      = null;
+  var walkGoal = null;   // the point index we are ultimately walking to
+  var walkDone = null;   // callback for the CURRENT goal, replaced on retarget
+  var walking  = false;  // is the animation loop running?
+
+  /* Point the sprite at the next waypoint on the way to walkGoal. Called on
+     arrival at every waypoint, and again whenever the goal changes — which is
+     what lets a keypress mid-walk turn the sprite around instead of being
+     thrown away. */
+  function aimAtGoal() {
+    var dir = walkGoal > cursor ? 1 : (walkGoal < cursor ? -1 : 0);
+    if (dir === 0) { aim = cursor; return; }
+    /* If we are currently heading the other way we are part-way along the
+       segment behind us, so walk back to points[cursor] first. Retargeting
+       never cuts a corner. */
+    if (aim !== null && (aim - cursor) * dir < 0) aim = cursor;
+    else aim = cursor + dir;
   }
 
   function walkToPoint(target, done) {
-    if (SITE.reducedMotion() || target === cursor) {
-      cursor = target;
+    walkGoal = target;
+    walkDone = done || null;
+
+    /* Reduced motion, or already standing there: no animation at all. */
+    if (SITE.reducedMotion() || (target === cursor && (!pos || walking === false))) {
+      walking = false;
+      cursor  = target;
+      aim     = cursor;
+      pos     = { x: points[cursor].x, y: points[cursor].y };
       placeSprite(points[cursor]);
       centreOn(points[cursor].x, true);
-      if (done) done();
+      busy = false;
+      var cb = walkDone; walkDone = null;
+      if (cb) cb();
       return;
     }
 
-    busy = true;
+    aimAtGoal();
+
+    /* A loop is already running — it will pick up the new goal on its next
+       frame. Starting a second loop would double the sprite's speed. */
+    if (walking) return;
+
+    if (!pos) pos = { x: points[cursor].x, y: points[cursor].y };
+
+    walking = true;
+    busy    = true;
     player.classList.remove('is-idle');
     player.classList.add('is-walking');
 
-    var pos      = { x: points[cursor].x, y: points[cursor].y };
-    var step     = target > cursor ? 1 : -1;
-    var next     = cursor + step;
     var last     = performance.now();
     var stepTick = 0;
 
@@ -305,7 +334,7 @@
       var dt = Math.min((now - last) / 1000, 0.05);
       last = now;
 
-      var goal = points[next];
+      var goal = points[aim];
       var dx = goal.x - pos.x, dy = goal.y - pos.y;
       var dist = Math.hypot(dx, dy);
       var move = WALK_SPEED * dt;
@@ -315,9 +344,9 @@
 
       if (dist <= move) {
         pos.x = goal.x; pos.y = goal.y;
-        cursor = next;
-        if (cursor === target) { finish(); return; }
-        next = cursor + step;
+        cursor = aim;
+        if (cursor === walkGoal) { finish(); return; }
+        aimAtGoal();
       } else {
         pos.x += dx / dist * move;
         pos.y += dy / dist * move;
@@ -338,8 +367,10 @@
       centreOn(points[cursor].x, true);
       player.classList.remove('is-walking');
       player.classList.add('is-idle');
-      busy = false;
-      if (done) done();
+      walking = false;
+      busy    = false;
+      var cb = walkDone; walkDone = null;
+      if (cb) cb();
     }
 
     requestAnimationFrame(frame);
@@ -382,19 +413,38 @@
     else centreOn(points[stops[i].point].x, false);
   }
 
+  /* One step along the map. `selected` is the node the player has ASKED to be
+     on, and it moves on every press — the sprite then chases it. Presses are
+     never dropped for being mid-walk. */
+  function stepBy(delta) {
+    if (!started) {
+      /* Standing at the head of the trail: the first step forward is world
+         one itself, and there is nothing behind it. */
+      if (delta > 0) select(0, { walk: true, force: true });
+      return;
+    }
+    var next = selected + delta;
+    /* World one is the front of the map. Left from there does nothing. */
+    if (next < 0 || next > stops.length - 1) return;
+    select(next, { walk: true, force: true });
+  }
+
   function enter(i) {
-    if (busy) return;
+    /* `entering` is the pipe-dive animation, which owns the screen until it
+       navigates. A plain walk is NOT a reason to ignore a click — clicking
+       mid-walk retargets the sprite. */
+    if (entering) return;
     var stop = stops[i];
 
     /* Castle at the end of the road -> contact page. */
     if (stop.kind === 'castle') {
-      selected = i; paintSelection();
-      walkTo(i, function () { SITE.warpTo('pages/contact.html'); });
+      selected = i; started = true; paintSelection();
+      walkTo(i, function () { entering = true; SITE.warpTo('pages/contact.html'); });
       return;
     }
 
     var p = stop.project;
-    selected = i; paintSelection();
+    selected = i; started = true; paintSelection();
 
     walkTo(i, function () {
       /* Locked worlds bump like an empty ? block and go nowhere. */
@@ -410,8 +460,9 @@
         return;
       }
 
-      if (SITE.reducedMotion()) { window.location.href = p.page; return; }
+      if (SITE.reducedMotion()) { entering = true; window.location.href = p.page; return; }
 
+      entering = true;
       busy = true;
       player.classList.remove('is-idle');
       player.classList.add('is-entering');
@@ -460,21 +511,12 @@
         case 'ArrowRight':
         case 'ArrowDown':
           ev.preventDefault();
-          if (busy) return;
-          /* From the head of the trail the first step is world one, not the
-             one after it. */
-          if (!started) select(0, { walk: true, force: true });
-          else select(selected + 1, { walk: true, force: true });
+          stepBy(1);
           break;
         case 'ArrowLeft':
         case 'ArrowUp':
           ev.preventDefault();
-          if (busy) return;
-          if (!started) return;                 // already at the start
-          /* Stepping left off world one walks back to the head of the trail
-             rather than sticking to world one. */
-          if (selected === 0) { SITE.sfx.select(); goHome(); }
-          else select(selected - 1, { walk: true, force: true });
+          stepBy(-1);
           break;
         case 'Enter':
         case ' ':
