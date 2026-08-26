@@ -2,8 +2,8 @@
    SITE — shared behaviour for every page
    --------------------------------------------------------------------------
    Handles: the pipe-warp screen transition, the optional Web Audio sound
-   effects (off by default, no audio files anywhere), the HUD coin counter,
-   and the prefers-reduced-motion escape hatch.
+   effects (off by default, no audio files anywhere), and the
+   prefers-reduced-motion escape hatch.
 
    Exposed as window.SITE so js/map.js can reuse it.
    ========================================================================== */
@@ -11,7 +11,6 @@
   'use strict';
 
   var STORE_SOUND = 'pixel-portfolio:sound';
-  var STORE_COINS = 'pixel-portfolio:coins';
 
   /* --- tiny localStorage wrapper; private-mode safe ---------------------- */
   function read(key, fallback) {
@@ -135,25 +134,10 @@
   }
 
   /* ======================================================================
-     COINS — shared counter shown in the HUD on every page
-     ====================================================================== */
-  var coins = {
-    get: function () { return parseInt(read(STORE_COINS, '0'), 10) || 0; },
-    set: function (n) { write(STORE_COINS, String(n)); this.render(); },
-    add: function (n) { this.set(this.get() + (n || 1)); return this.get(); },
-    render: function () {
-      var out = document.querySelectorAll('[data-coin-count]');
-      var text = String(this.get()).padStart(2, '0');
-      for (var i = 0; i < out.length; i++) out[i].textContent = text;
-    }
-  };
-
-  /* ======================================================================
      BOOT
      ====================================================================== */
   function boot() {
     arrive();
-    coins.render();
 
     /* Sound toggle button in the HUD. */
     var toggle = document.querySelector('[data-sound-toggle]');
@@ -193,7 +177,6 @@
 
   window.SITE = {
     sfx: sfx,
-    coins: coins,
     warpTo: warpTo,
     reducedMotion: reducedMotion
   };

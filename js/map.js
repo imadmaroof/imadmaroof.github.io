@@ -268,9 +268,21 @@
      the target stop. Under prefers-reduced-motion it just teleports.
      ====================================================================== */
   function walkTo(stopIndex, done) {
-    var target = stops[stopIndex].point;
     started = true;
+    walkToPoint(stops[stopIndex].point, done);
+  }
 
+  /* Walk back to the head of the trail — the spot the sprite idles on before
+     you have picked any world. Nothing is selected while standing there. */
+  function goHome(done) {
+    walkToPoint(0, function () {
+      started = false;
+      paintSelection();
+      if (done) done();
+    });
+  }
+
+  function walkToPoint(target, done) {
     if (SITE.reducedMotion() || target === cursor) {
       cursor = target;
       placeSprite(points[cursor]);
@@ -341,7 +353,6 @@
         c.taken = true;
         c.el.classList.add('is-collected');
         SITE.sfx.coin();
-        SITE.coins.add(1);
       }
     }
   }
@@ -352,14 +363,19 @@
   function paintSelection() {
     for (var i = 0; i < stops.length; i++) {
       if (!stops[i].el) continue;
-      stops[i].el.classList.toggle('is-selected', i === selected);
+      /* Before the first move the sprite is standing at the head of the
+         trail, not on a world, so no node should look selected. */
+      stops[i].el.classList.toggle('is-selected', started && i === selected);
     }
   }
 
   function select(i, opts) {
     i = Math.max(0, Math.min(i, stops.length - 1));
-    if (i === selected && !(opts && opts.force)) return;
+    if (i === selected && started && !(opts && opts.force)) return;
     selected = i;
+    /* Committing to a stop counts as leaving the head of the trail. This has
+       to happen before painting, or the first step highlights nothing. */
+    if (opts && opts.walk) started = true;
     paintSelection();
     SITE.sfx.select();
     if (opts && opts.walk) walkTo(i);
@@ -445,20 +461,27 @@
         case 'ArrowDown':
           ev.preventDefault();
           if (busy) return;
-          select(selected + 1, { walk: true, force: true });
+          /* From the head of the trail the first step is world one, not the
+             one after it. */
+          if (!started) select(0, { walk: true, force: true });
+          else select(selected + 1, { walk: true, force: true });
           break;
         case 'ArrowLeft':
         case 'ArrowUp':
           ev.preventDefault();
           if (busy) return;
-          select(selected - 1, { walk: true, force: true });
+          if (!started) return;                 // already at the start
+          /* Stepping left off world one walks back to the head of the trail
+             rather than sticking to world one. */
+          if (selected === 0) { SITE.sfx.select(); goHome(); }
+          else select(selected - 1, { walk: true, force: true });
           break;
         case 'Enter':
         case ' ':
           /* If a node button has focus the browser fires click for us. */
           if (ev.target.closest && ev.target.closest('.node, .castle')) return;
           ev.preventDefault();
-          enter(selected);
+          enter(started ? selected : 0);
           break;
         default:
           break;
