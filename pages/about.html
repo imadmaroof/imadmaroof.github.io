@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- EDIT: title + description -->
+<title>ABOUT &mdash; Your Name</title>
+<meta name="description" content="Placeholder about page.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%235c94fc'/%3E%3Crect x='2' y='3' width='12' height='11' fill='%23241c2c'/%3E%3Crect x='3' y='4' width='10' height='9' fill='%2339c5bb'/%3E%3Crect x='5' y='7' width='2' height='3' fill='%23fff'/%3E%3Crect x='9' y='7' width='2' height='3' fill='%23fff'/%3E%3C/svg%3E">
+</head>
+
+<body class="page">
+
+<header class="hud">
+  <a class="hud__name" href="../index.html" data-warp>YOUR <span>NAME</span></a>
+  <span class="hud__coins" title="Coins collected on the map">
+    <svg class="coin-icon pixel" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
+      <rect x="3" y="1" width="10" height="14" class="px-ink"/>
+      <rect x="2" y="3" width="12" height="10" class="px-ink"/>
+      <rect x="4" y="2" width="8" height="12" class="px-gold"/>
+      <rect x="3" y="4" width="10" height="8" class="px-gold"/>
+      <rect x="5" y="3" width="3" height="10" class="px-gold-hi"/>
+      <rect x="10" y="4" width="2" height="8" class="px-gold-lo"/>
+      <rect x="7" y="5" width="2" height="6" class="px-gold-deep"/>
+    </svg>
+    <span class="sr-only">Coins:</span>&times;<span data-coin-count>00</span>
+  </span>
+  <span class="hud__spacer"></span>
+  <nav class="hud__nav" aria-label="Main">
+    <a href="../index.html" data-warp>MAP</a>
+    <a class="hud__key" href="all-projects.html">LIST<span class="hud__wide"> VIEW</span></a>
+    <a class="hud__key" href="/resume.pdf">RESUME</a>
+    <a href="contact.html" data-warp>CONTACT</a>
+    <button type="button" class="hud__toggle" data-sound-toggle aria-pressed="false">SFX OFF</button>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <div class="level-banner">
+    <span class="level-banner__world">PLAYER 1</span>
+    <h1 class="level-banner__title">ABOUT ME</h1>
+    <p class="level-banner__blurb">
+      Placeholder tagline. One line about who you are and what you build.
+    </p>
+    <div class="level-banner__rule" aria-hidden="true"></div>
+  </div>
+
+  <div class="stack">
+
+    <!-- EDIT: your bio -->
+    <section class="panel panel--riveted" aria-labelledby="a-bio">
+      <span class="panel__label" id="a-bio">PROFILE</span>
+      <p>
+        Lorem-style filler description. Two or three sentences about your
+        background, the kind of work you like, and what you are looking for.
+      </p>
+      <p>
+        Placeholder second paragraph. Somewhere to mention where you are based,
+        what you are currently working on, or what you are learning.
+      </p>
+    </section>
+
+    <!-- EDIT: skills. Add or remove chips freely. -->
+    <section class="panel panel--riveted" aria-labelledby="a-skills">
+      <span class="panel__label" id="a-skills">POWER-UPS</span>
+      <p>TECH: placeholder, placeholder, placeholder.</p>
+      <ul class="chips">
+        <li class="chip">PLACEHOLDER</li>
+        <li class="chip">PLACEHOLDER</li>
+        <li class="chip">PLACEHOLDER</li>
+        <li class="chip">PLACEHOLDER</li>
+        <li class="chip">PLACEHOLDER</li>
+        <li class="chip">PLACEHOLDER</li>
+      </ul>
+    </section>
+
+    <!-- EDIT: experience timeline. Each score-row is one entry. -->
+    <section class="scorecard" aria-labelledby="a-history">
+      <h2 class="scorecard__head" id="a-history">&#9733; HIGH SCORES &#9733;</h2>
+      <div class="scorecard__rows">
+        <p class="score-row">
+          <span class="score-row__label">PLACEHOLDER ROLE</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">20XX&ndash;20XX</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">PLACEHOLDER ROLE</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">20XX&ndash;20XX</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">PLACEHOLDER STUDY</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">20XX&ndash;20XX</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- EDIT: point the button at your real CV file once you add one. -->
+    <section class="panel panel--riveted" id="resume" aria-labelledby="a-resume">
+      <span class="panel__label" id="a-resume">RESUME</span>
+      <p>
+        Placeholder note about your CV. Drop a PDF named <code>resume.pdf</code>
+        in the repo root and both this button and the RESUME link in the HUD
+        start working &mdash; they already point at <code>/resume.pdf</code>.
+      </p>
+      <div class="link-row">
+        <a class="btn btn--gold" href="/resume.pdf" rel="noopener">DOWNLOAD CV [PDF]</a>
+        <a class="btn" href="#" rel="noopener">LINKEDIN &gt;&gt;</a>
+        <a class="btn" href="#" rel="noopener">GITHUB &gt;&gt;</a>
+      </div>
+    </section>
+
+  </div>
+
+  <p class="site-foot">
+    <a href="../index.html" data-warp>&lt;&lt; BACK TO THE OVERWORLD</a>
+  </p>
+</main>
+
+<a class="pipe-back" href="../index.html" data-warp aria-label="Back to the overworld map">
+  <span class="pipe-back__label">MAP</span>
+  <span class="pipe" aria-hidden="true">
+    <span class="pipe__rim"><span class="pipe__mouth"></span></span>
+    <span class="pipe__body"></span>
+  </span>
+</a>
+
+<script src="../js/site.js"></script>
+</body>
+</html>

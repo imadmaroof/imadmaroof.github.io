@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ======================================================================
+     WORLD TEMPLATE
+     ----------------------------------------------------------------------
+     Duplicate this file for every project:
+
+         cp worlds/world-template.html worlds/my-project.html
+
+     Then fill in every block marked  EDIT  below, and add a matching entry
+     to the PROJECTS array in js/projects.js. Nothing else to touch — no
+     CSS, no layout.
+     ====================================================================== -->
+
+<!-- EDIT: page title + description -->
+<title>WORLD 1-1 &mdash; Project Title</title>
+<meta name="description" content="Placeholder description of this project.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%235c94fc'/%3E%3Crect x='2' y='3' width='12' height='11' fill='%23241c2c'/%3E%3Crect x='3' y='4' width='10' height='9' fill='%2339c5bb'/%3E%3Crect x='5' y='7' width='2' height='3' fill='%23fff'/%3E%3Crect x='9' y='7' width='2' height='3' fill='%23fff'/%3E%3C/svg%3E">
+</head>
+
+<body class="page">
+
+<!-- ---- HUD (identical on every page) ---------------------------------- -->
+<header class="hud">
+  <a class="hud__name" href="../index.html" data-warp>YOUR <span>NAME</span></a>
+
+  <span class="hud__coins" title="Coins collected on the map">
+    <svg class="coin-icon pixel" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
+      <rect x="3" y="1" width="10" height="14" class="px-ink"/>
+      <rect x="2" y="3" width="12" height="10" class="px-ink"/>
+      <rect x="4" y="2" width="8" height="12" class="px-gold"/>
+      <rect x="3" y="4" width="10" height="8" class="px-gold"/>
+      <rect x="5" y="3" width="3" height="10" class="px-gold-hi"/>
+      <rect x="10" y="4" width="2" height="8" class="px-gold-lo"/>
+      <rect x="7" y="5" width="2" height="6" class="px-gold-deep"/>
+    </svg>
+    <span class="sr-only">Coins:</span>&times;<span data-coin-count>00</span>
+  </span>
+
+  <span class="hud__spacer"></span>
+
+  <nav class="hud__nav" aria-label="Main">
+    <a href="../index.html" data-warp>MAP</a>
+    <a class="hud__key" href="../pages/all-projects.html">LIST<span class="hud__wide"> VIEW</span></a>
+    <a class="hud__key" href="/resume.pdf">RESUME</a>
+    <a href="../pages/about.html" data-warp>ABOUT</a>
+    <a href="../pages/contact.html" data-warp>CONTACT</a>
+    <button type="button" class="hud__toggle" data-sound-toggle aria-pressed="false">SFX OFF</button>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <!-- ==================================================================
+       LEVEL BANNER
+       EDIT: world number, project title, one-line hook.
+       ================================================================== -->
+  <div class="level-banner">
+    <span class="level-banner__world">WORLD 1-1</span>
+    <h1 class="level-banner__title">PROJECT TITLE</h1>
+    <p class="level-banner__blurb">
+      Placeholder hook. One or two sentences describing what this project is,
+      written in plain language for someone who has never seen it before.
+    </p>
+    <div class="level-banner__rule" aria-hidden="true"></div>
+  </div>
+
+  <div class="stack">
+
+    <!-- ================================================================
+         OVERVIEW — EDIT the paragraphs.
+         ================================================================ -->
+    <section class="panel panel--riveted" aria-labelledby="s-overview">
+      <span class="panel__label" id="s-overview">OVERVIEW</span>
+      <p>
+        Lorem-style filler description. Two or three sentences setting the
+        scene: what the project is, who it was for, and roughly when it
+        happened. Keep it readable — this paragraph is deliberately set in a
+        normal sans-serif rather than the pixel font.
+      </p>
+      <p>
+        Placeholder second paragraph. Add any context a reader needs before
+        the details make sense, then get out of the way.
+      </p>
+    </section>
+
+    <!-- ================================================================
+         THE GOAL — EDIT the bullets.
+         ================================================================ -->
+    <section class="panel panel--riveted" aria-labelledby="s-goal">
+      <span class="panel__label" id="s-goal">THE GOAL</span>
+      <p>Placeholder framing sentence for what this project set out to do.</p>
+      <ul class="coin-list">
+        <li>Placeholder goal one — the problem being solved.</li>
+        <li>Placeholder goal two — the constraint that made it interesting.</li>
+        <li>Placeholder goal three — how success was going to be measured.</li>
+      </ul>
+    </section>
+
+    <!-- ================================================================
+         TECH STACK — EDIT the chips. Add or remove <li> freely.
+         ================================================================ -->
+    <section class="panel panel--riveted" aria-labelledby="s-tech">
+      <span class="panel__label" id="s-tech">TECH STACK</span>
+      <p>TECH: placeholder, placeholder, placeholder.</p>
+      <ul class="chips">
+        <li class="chip">PLACEHOLDER</li>
+        <li class="chip">PLACEHOLDER</li>
+        <li class="chip">PLACEHOLDER</li>
+        <li class="chip">PLACEHOLDER</li>
+        <li class="chip">PLACEHOLDER</li>
+      </ul>
+    </section>
+
+    <!-- ================================================================
+         WHAT I BUILT — EDIT.
+         ================================================================ -->
+    <section class="panel panel--riveted" aria-labelledby="s-built">
+      <span class="panel__label" id="s-built">WHAT I BUILT</span>
+      <p>
+        Placeholder description of the actual work. This is the section that
+        should carry the most detail — the interesting decisions, the parts
+        that were harder than they looked, the things you would do again.
+      </p>
+      <ul class="coin-list">
+        <li><strong>Placeholder feature.</strong> Filler explanation of what it does and why it mattered.</li>
+        <li><strong>Placeholder feature.</strong> Filler explanation of what it does and why it mattered.</li>
+        <li><strong>Placeholder feature.</strong> Filler explanation of what it does and why it mattered.</li>
+      </ul>
+    </section>
+
+    <!-- ================================================================
+         RESULTS — the LEVEL COMPLETE scorecard.
+         EDIT the label/value pairs. Add or remove .score-row blocks.
+         ================================================================ -->
+    <section class="scorecard" aria-labelledby="s-results">
+      <h2 class="scorecard__head" id="s-results">&#9733; LEVEL COMPLETE &#9733;</h2>
+      <div class="scorecard__rows">
+        <p class="score-row">
+          <span class="score-row__label">METRIC ONE</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">000</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">METRIC TWO</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">000</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">METRIC THREE</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">000</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">TIME</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">00:00</span>
+        </p>
+      </div>
+      <p class="scorecard__total">TOTAL &nbsp; <b>000000</b></p>
+    </section>
+
+    <!-- ================================================================
+         LINKS — EDIT the hrefs. Delete any you do not have.
+         ================================================================ -->
+    <section class="panel panel--riveted" aria-labelledby="s-links">
+      <span class="panel__label" id="s-links">LINKS</span>
+      <div class="link-row">
+        <a class="btn btn--green" href="#" rel="noopener">REPO &gt;&gt;</a>
+        <a class="btn btn--gold"  href="#" rel="noopener">LIVE DEMO &gt;&gt;</a>
+        <a class="btn"            href="#" rel="noopener">WRITE-UP &gt;&gt;</a>
+      </div>
+    </section>
+
+  </div>
+
+  <p class="site-foot">
+    <a href="../index.html" data-warp>&lt;&lt; BACK TO THE OVERWORLD</a>
+  </p>
+</main>
+
+<!-- ---- corner pipe: back to the map, with a reverse pipe transition ---- -->
+<a class="pipe-back" href="../index.html" data-warp aria-label="Back to the overworld map">
+  <span class="pipe-back__label">MAP</span>
+  <span class="pipe" aria-hidden="true">
+    <span class="pipe__rim"><span class="pipe__mouth"></span></span>
+    <span class="pipe__body"></span>
+  </span>
+</a>
+
+<script src="../js/site.js"></script>
+</body>
+</html>
