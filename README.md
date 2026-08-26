@@ -123,10 +123,11 @@ The constants at the top of `js/map.js` control the layout:
 
 ### Your name and links
 
-`YOUR NAME` appears in the HUD of every page, and the nav links point at
+The site name in the HUD of every page is `IMAD <span>ABOO</span>`, and the
+nav links point at
 `pages/all-projects.html`, `/resume.pdf`, `pages/about.html` and
-`pages/contact.html`. Search for `YOUR <span>NAME</span>` and `EDIT` across
-the HTML files.
+`pages/contact.html`. Search for `EDIT` across the HTML files for
+everything else that still needs filling in.
 
 ### Your resume
 
