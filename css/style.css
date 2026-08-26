@@ -524,6 +524,27 @@ p:last-child { margin-bottom: 0; }
   z-index: 3;
 }
 
+/* --- 6f-2. the front half of the pipe --------------------------------------
+   .node carries a transform, which makes it a stacking context, so nothing
+   inside a node can ever be painted above the sprite (which is a sibling of
+   the node, not a child). That is why the old dive could only fade out.
+
+   So the rim is drawn TWICE: once inside the node as before, and once here as
+   a detached copy pinned over the same pixels at a higher z-index than the
+   sprite. The copy is what the sprite disappears behind. At rest it lands
+   exactly on the original, so nothing looks different until something walks
+   into it.
+
+   Painting order at a pipe:  pipe body (5)  <  sprite (6)  <  pipe cap (7)
+   -------------------------------------------------------------------------- */
+.pipe-cap {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 7;
+  pointer-events: none;
+  filter: none;               /* the rim underneath already casts the shadow */
+}
+
 /* --- 6g. locked node: a ? block instead of a pipe -------------------------- */
 .node--locked { cursor: not-allowed; }
 .node--locked .node__sign { filter: grayscale(.85) brightness(.92); }
@@ -673,16 +694,62 @@ p:last-child { margin-bottom: 0; }
 .player.is-walking { animation: walk-hop .42s steps(4, end) infinite; }
 .player.is-flipped svg { transform: scaleX(-1); }
 
-/* entering the pipe: shrink down the middle and drop out of sight */
+/* --- entering the pipe -----------------------------------------------------
+   The sprite rests at the foot of the pipe, so the mouth is ABOVE its head.
+   It hops up clear of the rim, then sinks down into the mouth. Because
+   transform-origin is the sprite's feet, shrinking scaleY collapses it
+   downward into the opening rather than toward its middle.
+
+   The occlusion is not done here — it is done by .pipe-cap, a copy of the
+   rim painted at a higher z-index than the sprite (see 6f). Once the
+   sprite's feet drop past the rim's top edge it is genuinely covered by
+   pipe, lower half first, instead of fading out.
+
+   Offsets are in sync with the pipe: rim is 28px tall and sits 51px above
+   the node's baseline, so the rim band is -79px .. -51px from the sprite's
+   resting feet. The dive ends at -62px — inside that band, and therefore
+   behind the cap.
+   -------------------------------------------------------------------------- */
 @keyframes pipe-enter {
-  0%   { transform: translate(-50%, -100%) translateY(0)    scaleY(1); }
-  30%  { transform: translate(-50%, -100%) translateY(-6px) scaleY(1.08); }
-  100% { transform: translate(-50%, -100%) translateY(34px) scaleY(.05); }
+  0%   { transform: translate(-50%, -100%) translateY(0)     scale(1, 1); }
+  18%  { transform: translate(-50%, -100%) translateY(-14px) scale(1.08, .92); }  /* crouch */
+  41%  { transform: translate(-50%, -100%) translateY(-86px) scale(.94, 1.06); }  /* hop, clear of the rim */
+  56%  { transform: translate(-50%, -100%) translateY(-79px) scale(1, 1); }       /* hang over the mouth */
+  100% { transform: translate(-50%, -100%) translateY(-62px) scale(.86, .05); }   /* sink in, squashed */
 }
 .player.is-entering {
-  animation: pipe-enter .55s steps(6, end) forwards;
-  z-index: 1;                 /* dive BEHIND the pipe rim */
+  animation: pipe-enter 340ms cubic-bezier(.45, 0, .55, 1) forwards;
 }
+
+/* The hop has to clear the rim, and the rim sits only ~27px below the sign,
+   so the sprite unavoidably crosses it. Since .node is a stacking context the
+   sprite cannot pass behind the sign — so the sign steps out of the way
+   instead, quickly enough to be gone before the sprite arrives. */
+.node.is-diving .node__sign,
+.node.is-diving .node__post,
+.node.is-diving .node__cursor {
+  opacity: 0;
+  transition: opacity 90ms linear;
+}
+.node.is-rising .node__sign,
+.node.is-rising .node__post {
+  animation: sign-return 200ms 140ms linear backwards;
+}
+@keyframes sign-return { from { opacity: 0; } to { opacity: 1; } }
+
+/* --- coming back OUT of the pipe -------------------------------------------
+   The same move played backwards, used when you return to the map from a
+   project page. The sprite starts collapsed inside the mouth, hidden by the
+   cap, and grows up out of it.
+   -------------------------------------------------------------------------- */
+@keyframes pipe-exit {
+  0%   { transform: translate(-50%, -100%) translateY(-62px) scale(.86, .05); }
+  40%  { transform: translate(-50%, -100%) translateY(-79px) scale(1, 1); }
+  62%  { transform: translate(-50%, -100%) translateY(-86px) scale(.94, 1.06); }
+  85%  { transform: translate(-50%, -100%) translateY(-6px)  scale(1.08, .92); }
+  100% { transform: translate(-50%, -100%) translateY(0)     scale(1, 1); }
+}
+.player.is-exiting { animation: pipe-exit 380ms cubic-bezier(.45, 0, .55, 1) forwards; }
 
 /* --------------------------------------------------------------------------
    7. HINT BAR (controls legend, desktop map only)
@@ -960,22 +1027,34 @@ p:last-child { margin-bottom: 0; }
 }
 
 /* --------------------------------------------------------------------------
-   10. SCREEN TRANSITION (the pipe warp wipe)
-   -------------------------------------------------------------------------- */
-.warp {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  background: var(--ink);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .28s steps(5, end);
-}
-.warp.is-on { opacity: 1; pointer-events: all; }
+   10. SCREEN TRANSITION — the iris wipe
+   A black field with a circular hole punched in it. The hole is this
+   element's own box — transparent, round — and the black is a single huge
+   box-shadow spreading out from it, so the page shows through the hole and
+   everything outside is covered no matter where the circle sits.
 
-/* Page arriving out of a pipe fades up from black. */
-@keyframes warp-in { from { opacity: 1; } to { opacity: 0; } }
-.warp.is-arriving { animation: warp-in .4s steps(6, end) forwards; }
+   Closing the iris is then just animating the box down to 0x0. The centre is
+   set in JS to the pipe the player used, so the circle collapses onto the
+   pipe rather than the middle of the screen.
+   -------------------------------------------------------------------------- */
+.iris {
+  position: fixed;
+  left: 50%; top: 50%;
+  width: 0; height: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 150vmax var(--ink);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 999;
+  display: none;
+}
+.iris.is-on { display: block; }
+.iris.is-blocking { pointer-events: all; }
+
+@media (prefers-reduced-motion: reduce) {
+  .iris { display: none !important; }
+}
 
 /* --------------------------------------------------------------------------
    11. FOOTER
@@ -1013,7 +1092,6 @@ p:last-child { margin-bottom: 0; }
     scroll-behavior: auto !important;
   }
   .node__cursor { opacity: 1; }
-  .warp { display: none; }
 }
 
 /* --------------------------------------------------------------------------
