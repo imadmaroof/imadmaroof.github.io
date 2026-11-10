@@ -34,7 +34,9 @@
             page:   'worlds/my-project.html',
             locked: false,
             tech:   ['Python', 'PostgreSQL'],
-            links:  [{ label: 'REPO', href: 'https://github.com/you/my-project' }]
+            links:  [{ label: 'REPO', href: 'https://github.com/you/my-project' }],
+            abstract: 'Two or three sentences for the preview card.',
+            media:    'worlds/media/my-project.png'
           }
 
    That's it. The map grows, the path re-routes, the node appears.
@@ -68,10 +70,22 @@
                     Rendered as buttons on the plain list page. Omit or leave
                     empty and the links row is skipped entirely.
 
-   Both are OPTIONAL. The overworld map (js/map.js) never reads them, so a
-   project entry without them still works exactly as before — they exist so
-   the no-animation list view can show a stack and links without you having
-   to repeat yourself in the world page.
+   Both are OPTIONAL. Leave either out and the plain list simply skips that
+   row. The preview card on the map also shows the first four tech items.
+
+   ---- optional, used by the preview card on the map ------------------------
+
+   The card pops up beside a world while the player is standing on it.
+
+   abstract string  Two or three sentences for the card. Falls back to blurb
+                    when omitted.
+   media    string  Picture or video for the card, as a path from the site
+                    root, e.g. 'worlds/media/my-project.png' or
+                    'worlds/media/my-project.mp4'. Videos (.mp4 .webm .mov)
+                    play muted and looped. Leave it '' and the card shows an
+                    empty screen marking where the media will go. A 16:9
+                    image fills the frame exactly; other shapes are cropped
+                    to fit.
 
    --------------------------------------------------------------------------
    NOTES
@@ -98,7 +112,9 @@ const PROJECTS = [
     links:  [
       { label: 'REPO',      href: '#' },
       { label: 'LIVE DEMO', href: '#' }
-    ]
+    ],
+    abstract: 'Placeholder abstract. Two or three sentences on what this project does and the one result worth knowing about. Shown in the preview card on the map.',
+    media:    ''
   },
 
   /* ---- WORLD 2 ---------------------------------------------------------- */
@@ -113,7 +129,9 @@ const PROJECTS = [
     links:  [
       { label: 'REPO',      href: '#' },
       { label: 'LIVE DEMO', href: '#' }
-    ]
+    ],
+    abstract: 'Placeholder abstract. Two or three sentences on what this project does and the one result worth knowing about. Shown in the preview card on the map.',
+    media:    ''
   },
 
   /* ---- WORLD 3 ---------------------------------------------------------- */
@@ -128,7 +146,9 @@ const PROJECTS = [
     links:  [
       { label: 'REPO',      href: '#' },
       { label: 'LIVE DEMO', href: '#' }
-    ]
+    ],
+    abstract: 'Placeholder abstract. Two or three sentences on what this project does and the one result worth knowing about. Shown in the preview card on the map.',
+    media:    ''
   },
 
   /* ---- WORLD 4 — locked example ----------------------------------------- */

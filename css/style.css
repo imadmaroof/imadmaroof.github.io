@@ -72,6 +72,23 @@
   --locked:         #8d8898;   /* greyed-out locked nodes                    */
   --locked-lo:      #5f5b6b;
 
+  /* --- the player character (js/sprite.js) ------------------------------- */
+  --hat-hi:         #ffe594;   /* straw hat                                  */
+  --hat:            #f2c14e;
+  --hat-lo:         #c98f2e;
+  --band:           #d83a3a;   /* hat band, and the tie                      */
+  --band-lo:        #9c2430;
+  --hair:           #17121d;
+  --hair-hi:        #3b3048;
+  --skin-hi:        #d6946a;
+  --skin:           #b9774e;
+  --skin-lo:        #8f5534;
+  --shirt:          #f6f2ea;
+  --suit-hi:        #48537e;
+  --suit:           #2b3352;
+  --suit-lo:        #1b2038;
+  --shoe:           #120e16;
+
   /* --- text -------------------------------------------------------------- */
   --text:           #241c2c;
   --text-soft:      #57506b;
@@ -535,7 +552,11 @@ p:last-child { margin-bottom: 0; }
    exactly on the original, so nothing looks different until something walks
    into it.
 
-   Painting order at a pipe:  pipe body (5)  <  sprite (6)  <  pipe cap (7)
+   Painting order at a pipe:  pipe body (5)  <  pipe cap (7)  <  sprite (8)
+
+   The sprite normally sits ABOVE the cap, so walking past a pipe draws it
+   over the whole pipe. Only the pipe-enter / pipe-exit keyframes drop it to
+   6, behind the cap, for the part of the move where it is inside the mouth.
    -------------------------------------------------------------------------- */
 .pipe-cap {
   position: absolute;
@@ -665,15 +686,32 @@ p:last-child { margin-bottom: 0; }
 
 /* --- 6k. the player sprite ------------------------------------------------ */
 .player {
+  --walk-cycle: .3s;          /* one full stride: both feet */
   position: absolute;
-  width: 48px; height: 48px;
+  width: 48px; height: 72px;  /* the 16 x 24 sprite at 3x */
   transform: translate(-50%, -100%);
   transform-origin: 50% 100%;
-  z-index: 6;
+  /* Above the pipe caps (7), so walking past a pipe draws the sprite over
+     all of it. Only the dive and the climb-out drop it behind the rim. */
+  z-index: 8;
   pointer-events: none;
   will-change: left, top;
 }
 .player svg { width: 100%; height: 100%; display: block; }
+
+/* --- animation frames ------------------------------------------------------
+   js/sprite.js draws every frame into one SVG, each in its own <g>. Exactly
+   one is visible at a time. The swaps use steps(1, end), so each frame
+   snaps on and off like a real sprite sheet instead of cross-fading. */
+.player .fr      { opacity: 0; }
+.player .fr-idle { opacity: 1; }
+
+.player.is-walking .fr-idle  { opacity: 0; }
+.player.is-walking .fr-walk1 { animation: fr-first-half  var(--walk-cycle) steps(1, end) infinite; }
+.player.is-walking .fr-walk2 { animation: fr-second-half var(--walk-cycle) steps(1, end) infinite; }
+
+@keyframes fr-first-half  { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes fr-second-half { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
 
 /* idle: gentle squash-and-stretch breathing */
 @keyframes idle-bob {
@@ -691,7 +729,7 @@ p:last-child { margin-bottom: 0; }
   75%  { transform: translate(-50%, -100%) translateY(-5px) scale(.97, 1.03); }
   100% { transform: translate(-50%, -100%) translateY(0)    scale(1, 1); }
 }
-.player.is-walking { animation: walk-hop .42s steps(4, end) infinite; }
+.player.is-walking { animation: walk-hop var(--walk-cycle) steps(4, end) infinite; }
 .player.is-flipped svg { transform: scaleX(-1); }
 
 /* --- entering the pipe -----------------------------------------------------
@@ -717,9 +755,26 @@ p:last-child { margin-bottom: 0; }
   56%  { transform: translate(-50%, -100%) translateY(-79px) scale(1, 1); }       /* hang over the mouth */
   100% { transform: translate(-50%, -100%) translateY(-62px) scale(.86, .05); }   /* sink in, squashed */
 }
-.player.is-entering {
-  animation: pipe-enter 340ms cubic-bezier(.45, 0, .55, 1) forwards;
+/* Which side of the rim the sprite is on. It starts in FRONT of the whole
+   pipe and only drops behind the rim cap at 47% — the top of the hop, when
+   its feet are above the rim (feet clear it from ~39% to 56%). At that
+   instant sprite and rim do not overlap at all, so the switch is invisible;
+   everything after it sinks behind the rim. Kept in its own keyframes so
+   the layer change rides the same clock as the motion and cannot drift. */
+@keyframes pipe-enter-layer {
+  0%, 46.9% { z-index: 8; }
+  47%, 100% { z-index: 6; }
 }
+.player.is-entering {
+  animation:
+    pipe-enter       340ms cubic-bezier(.45, 0, .55, 1) forwards,
+    pipe-enter-layer 340ms linear forwards;
+}
+/* Crouch on the standing frame, then the jump frame for the hop and sink. */
+.player.is-entering .fr-idle { animation: fr-until-18 340ms steps(1, end) forwards; }
+.player.is-entering .fr-jump { animation: fr-from-18  340ms steps(1, end) forwards; }
+@keyframes fr-until-18 { 0% { opacity: 1; } 18% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes fr-from-18  { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 1; } }
 
 /* The hop has to clear the rim, and the rim sits only ~27px below the sign,
    so the sprite unavoidably crosses it. Since .node is a stacking context the
@@ -749,7 +804,183 @@ p:last-child { margin-bottom: 0; }
   85%  { transform: translate(-50%, -100%) translateY(-6px)  scale(1.08, .92); }
   100% { transform: translate(-50%, -100%) translateY(0)     scale(1, 1); }
 }
-.player.is-exiting { animation: pipe-exit 380ms cubic-bezier(.45, 0, .55, 1) forwards; }
+/* The reverse: behind the rim while climbing out, back in front at 52%, by
+   which point the feet are above the rim (they clear it from ~40% to 64%). */
+@keyframes pipe-exit-layer {
+  0%, 51.9% { z-index: 6; }
+  52%, 100% { z-index: 8; }
+}
+.player.is-exiting {
+  animation:
+    pipe-exit       380ms cubic-bezier(.45, 0, .55, 1) forwards,
+    pipe-exit-layer 380ms linear forwards;
+}
+/* Jump frame on the way up and out, standing frame for the landing. */
+.player.is-exiting .fr-idle { animation: fr-from-85  380ms steps(1, end) forwards; }
+.player.is-exiting .fr-jump { animation: fr-until-85 380ms steps(1, end) forwards; }
+@keyframes fr-until-85 { 0% { opacity: 1; } 85% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes fr-from-85  { 0% { opacity: 0; } 85% { opacity: 1; } 100% { opacity: 1; } }
+
+/* --- 6l. project preview card ---------------------------------------------
+   Pops up beside a world while the player stands on it (js/map.js). A
+   miniature of the project page: banner, media, abstract, tech, prompt.
+   -------------------------------------------------------------------------- */
+.preview {
+  position: absolute;
+  width: 224px;
+  z-index: 9;                       /* above the sprite and the pipe caps */
+  pointer-events: none;
+  visibility: hidden;
+}
+.preview.is-on {
+  visibility: visible;
+  animation: preview-pop 150ms steps(3, end);
+}
+.preview--above { transform-origin: var(--tail-x, 50%) 100%; }
+.preview--right { transform-origin: 0 var(--tail-y, 50%); }
+.preview--left  { transform-origin: 100% var(--tail-y, 50%); }
+@keyframes preview-pop {
+  from { transform: scale(.82); opacity: .4; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.preview__card {
+  background: var(--panel);
+  border: var(--bevel) solid var(--ink);
+  box-shadow:
+    inset  var(--bevel)  var(--bevel) 0 var(--panel-hi),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--panel-lo),
+    var(--drop) var(--drop) 0 rgba(0, 0, 0, .32);
+  padding: 9px;
+}
+
+/* the level banner, as on the project page */
+.preview__banner {
+  display: block;
+  margin: -9px -9px 9px;
+  padding: 7px 9px 8px;
+  background: var(--panel-alt);
+  border-bottom: var(--bevel) solid var(--ink);
+  box-shadow: inset var(--bevel) var(--bevel) 0 var(--panel-alt-hi);
+}
+.preview__world {
+  display: block;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 var(--gold-deep);
+  margin-bottom: 6px;
+}
+.preview__title {
+  display: block;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.5;
+  color: var(--text-invert);
+}
+
+/* the screenshot / video, 16:9 */
+.preview__media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--panel-alt-lo);
+  border: var(--bevel) solid var(--ink);
+  overflow: hidden;
+}
+.preview__media img,
+.preview__media video {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.preview__placeholder {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+  color: var(--locked);
+  /* a dark CRT screen with faint scanlines */
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, transparent 2px 4px),
+    var(--panel-alt-lo);
+}
+.preview--locked .preview__placeholder { font-size: 26px; color: var(--locked-lo); }
+
+.preview__abstract {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text);
+  /* a preview, not the page: long abstracts stop at three lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.preview__chips {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  list-style: none; margin: 8px 0 0; padding: 0;
+}
+.preview__chips li {
+  font-family: var(--font-pixel);
+  font-size: 6px;
+  line-height: 1;
+  padding: 5px 6px;
+  background: var(--water);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+}
+.preview__chips li:nth-child(3n+2) { background: var(--gold); }
+.preview__chips li:nth-child(3n+3) { background: var(--grass-hi); }
+
+.preview__cta {
+  margin: 8px 0 0;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--accent-lo);
+}
+.preview--locked .preview__cta { color: var(--locked-lo); }
+
+/* the pointer back to the world — an outlined pixel wedge */
+.preview__tail {
+  position: absolute;
+  top: var(--tail-y, 50%);
+  width: 16px; height: 22px;
+  margin-top: -11px;
+  background: var(--ink);
+}
+.preview__tail::after {
+  content: "";
+  position: absolute;
+  top: 4px; width: 10px; height: 14px;
+  background: var(--panel);
+}
+.preview--right .preview__tail { left: -13px; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+.preview--right .preview__tail::after { left: 6px; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+.preview--left  .preview__tail { right: -13px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.preview--left  .preview__tail::after { right: 6px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+/* above the sign: the wedge hangs from the bottom edge, pointing down */
+.preview--above .preview__tail {
+  top: auto; bottom: -13px; left: var(--tail-x, 50%);
+  width: 22px; height: 16px; margin: 0 0 0 -11px;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.preview--above .preview__tail::after {
+  top: 0; left: 4px; width: 14px; height: 10px;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+/* Short windows: the same card without the chips and with a two-line
+   abstract, so it can still sit above the world instead of beside it. */
+.preview--compact .preview__chips { display: none; }
+.preview--compact .preview__abstract { -webkit-line-clamp: 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .preview.is-on { animation: none; }
+}
 
 /* --------------------------------------------------------------------------
    7. HINT BAR (controls legend, desktop map only)
@@ -1105,9 +1336,21 @@ p:last-child { margin-bottom: 0; }
 .px-gold-hi    { fill: var(--gold-hi); }
 .px-gold-lo    { fill: var(--gold-lo); }
 .px-gold-deep  { fill: var(--gold-deep); }
-.px-body       { fill: var(--water); }
-.px-body-hi    { fill: #7ef0e6; }
-.px-body-lo    { fill: var(--water-lo); }
+.px-hat        { fill: var(--hat); }
+.px-hat-hi     { fill: var(--hat-hi); }
+.px-hat-lo     { fill: var(--hat-lo); }
+.px-band       { fill: var(--band); }
+.px-band-lo    { fill: var(--band-lo); }
+.px-hair       { fill: var(--hair); }
+.px-hair-hi    { fill: var(--hair-hi); }
+.px-skin       { fill: var(--skin); }
+.px-skin-hi    { fill: var(--skin-hi); }
+.px-skin-lo    { fill: var(--skin-lo); }
+.px-shirt      { fill: var(--shirt); }
+.px-suit       { fill: var(--suit); }
+.px-suit-hi    { fill: var(--suit-hi); }
+.px-suit-lo    { fill: var(--suit-lo); }
+.px-shoe       { fill: var(--shoe); }
 .px-stone      { fill: var(--stone); }
 .px-stone-hi   { fill: var(--stone-hi); }
 .px-stone-lo   { fill: var(--stone-lo); }
