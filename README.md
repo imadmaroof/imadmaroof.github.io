@@ -45,8 +45,9 @@ it, so prefer one of the commands above.
 │   └── style.css               all styling; palette lives at the very top
 ├── js/
 │   ├── projects.js             ← THE ONLY FILE YOU EDIT TO ADD A PROJECT
+│   ├── sprite.js               the player character, drawn as text grids
 │   ├── map.js                  builds and drives the overworld
-│   └── site.js                 shared: page transitions, sound, coin counter
+│   └── site.js                 shared: page transitions, sound
 ├── worlds/
 │   └── world-template.html     duplicate this per project
 ├── pages/
@@ -117,7 +118,8 @@ The constants at the top of `js/map.js` control the layout:
 | --- | --- |
 | `NODE_GAP` | horizontal px between world nodes |
 | `NODE_Y` | list of heights (as a fraction of the map) that the nodes cycle through — this is what makes the path zig-zag |
-| `WALK_SPEED` | sprite speed in px/second |
+| `WALK_SPEED` | top walking speed in px/second |
+| `WALK_ACCEL` / `WALK_DECEL` | how quickly the sprite gets up to speed and brakes into a stop |
 | `LAND_TOP` | where the ground starts |
 | `CASTLE_GAP` | distance from the last world to the castle |
 
@@ -167,7 +169,50 @@ tech:  ['Python', 'PostgreSQL'],
 links: [{ label: 'REPO', href: 'https://github.com/you/my-project' }]
 ```
 
-Leave either out and that row is simply skipped. The map never reads them.
+Leave either out and that row is simply skipped. The map's preview card also
+shows the first three `tech` items.
+
+---
+
+## The preview card
+
+Stand on a world and a small card pops up above it: a miniature of that
+project's page, with the world banner, a screenshot or video, a short
+abstract and the tech stack. It only appears once the character has stopped
+on the world, never while walking past, and it disappears as soon as you
+move or dive into the pipe.
+
+Two optional fields in `js/projects.js` fill it:
+
+```js
+abstract: 'Two or three sentences for the card.',   // falls back to blurb
+media:    'worlds/media/my-project.png'               // or .mp4 / .webm / .mov
+```
+
+* **`media`** is a path from the site root. Images fill a 16:9 frame (other
+  shapes are cropped to fit); videos play muted and looped. Leave it `''`
+  and the card shows an empty screen marking where it will go.
+* **`abstract`** is cut off after three lines, so it stays a preview.
+
+The card sits in the sky above the world's sign. On short windows (an iPad
+in landscape, say) it moves down over the world's own sign, which only
+repeats what the card's banner already says, and if it is still a few pixels
+too tall it drops its chips and one line of text to fit.
+
+---
+
+## The character
+
+The character lives in `js/sprite.js`, drawn as text: one letter per pixel,
+16 wide by 24 tall, shown at 3x. Change a letter and reload. A key at the top
+of the file says which letter is which colour; the colours themselves are the
+`--hat`, `--skin`, `--suit`, ... tokens in the `:root` block of
+`css/style.css`, so recolouring never needs the sprite file.
+
+There are four frames: `idle`, two walking frames (`walk1`, `walk2`) that
+alternate in step with the bounce, and `jump` for diving into and climbing
+out of a pipe. All of them face right; walking left mirrors the sprite. The
+head is shared, so a change to the face or hat is made once.
 
 ---
 

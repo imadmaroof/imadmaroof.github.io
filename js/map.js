@@ -25,7 +25,13 @@
   var START_PAD  = 210;   // px from the left edge to world 1
   var CASTLE_GAP = 280;   // px from the last world to the castle
   var END_PAD    = 190;   // px of map after the castle
-  var WALK_SPEED = 320;   // px per second
+  /* Walking. The sprite eases in from standing, cruises, and brakes into the
+     stop, rather than moving at one flat speed. A pipe-to-pipe leg is about
+     385-485px of path, which these numbers walk in roughly 0.9-1.1s. */
+  var WALK_SPEED = 560;   // px/s at full stride
+  var WALK_ACCEL = 3200;  // px/s^2: standing to full stride in ~0.18s
+  var WALK_DECEL = 2400;  // px/s^2: brakes over the last ~65px
+  var WALK_MIN   = 60;    // px/s: never crawl the final few pixels
   var MIN_HEIGHT = 560;   // map never gets shorter than this
 
   /* Vertical position of each node, as a fraction of map height. The list
@@ -96,25 +102,35 @@
      up the palette from CSS. Nothing here is traced from anyone's game.
      ====================================================================== */
 
-  /* "BYTE" — the player. A small teal robot blob with an antenna. */
-  var PLAYER_SVG =
-    '<svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">' +
-      '<rect x="6" y="0" width="4" height="1" class="px-gold"/>' +
-      '<rect x="7" y="1" width="2" height="2" class="px-ink"/>' +
-      '<rect x="2" y="3" width="12" height="11" class="px-ink"/>' +
-      '<rect x="3" y="4" width="10" height="9" class="px-body"/>' +
-      '<rect x="3" y="4" width="8" height="2" class="px-body-hi"/>' +
-      '<rect x="3" y="6" width="2" height="5" class="px-body-hi"/>' +
-      '<rect x="11" y="6" width="2" height="7" class="px-body-lo"/>' +
-      '<rect x="4" y="12" width="8" height="1" class="px-body-lo"/>' +
-      '<rect x="5" y="7" width="2" height="3" class="px-white"/>' +
-      '<rect x="9" y="7" width="2" height="3" class="px-white"/>' +
-      '<rect x="5" y="8" width="1" height="2" class="px-ink"/>' +
-      '<rect x="9" y="8" width="1" height="2" class="px-ink"/>' +
-      '<rect x="6" y="11" width="4" height="1" class="px-ink"/>' +
-      '<rect x="3" y="14" width="4" height="2" class="px-ink"/>' +
-      '<rect x="9" y="14" width="4" height="2" class="px-ink"/>' +
-    '</svg>';
+  /* The player. The pixels live in js/sprite.js as text grids, one per
+     frame; this turns them into a single SVG holding every frame as its own
+     <g>, and CSS shows whichever one the current state calls for (standing,
+     mid-stride, jumping). Runs of same-coloured pixels on a row are merged
+     into one rect, which keeps a 16x24 sprite to a few dozen elements per
+     frame instead of hundreds. */
+  function buildPlayerSvg(sprite) {
+    var w = sprite.width, h = sprite.height;
+    var out = '<svg viewBox="0 0 ' + w + ' ' + h + '" shape-rendering="crispEdges" aria-hidden="true">';
+    for (var name in sprite.frames) {
+      if (!Object.prototype.hasOwnProperty.call(sprite.frames, name)) continue;
+      var rows = sprite.frames[name];
+      out += '<g class="fr fr-' + name + '">';
+      for (var y = 0; y < rows.length; y++) {
+        var row = rows[y], x = 0;
+        while (x < row.length) {
+          var ch = row.charAt(x), run = 1;
+          while (x + run < row.length && row.charAt(x + run) === ch) run++;
+          if (ch !== '.' && sprite.palette[ch]) {
+            out += '<rect x="' + x + '" y="' + y + '" width="' + run +
+                   '" height="1" class="px-' + sprite.palette[ch] + '"/>';
+          }
+          x += run;
+        }
+      }
+      out += '</g>';
+    }
+    return out + '</svg>';
+  }
 
   /* A spinning coin. */
   var COIN_SVG =
@@ -284,6 +300,7 @@
     paintSelection();
     centreOn(points[cursor].x, true);
     parallax();
+    if (previewEl) { previewFor = -1; updatePreview(); }
   }
 
   /* ======================================================================
@@ -325,19 +342,41 @@
   var walkGoal = null;   // the point index we are ultimately walking to
   var walkDone = null;   // callback for the CURRENT goal, replaced on retarget
   var walking  = false;  // is the animation loop running?
+  var speed    = 0;      // current walking speed, px/s
 
   /* Point the sprite at the next waypoint on the way to walkGoal. Called on
      arrival at every waypoint, and again whenever the goal changes — which is
      what lets a keypress mid-walk turn the sprite around instead of being
      thrown away. */
   function aimAtGoal() {
+    var prev = aim;
     var dir = walkGoal > cursor ? 1 : (walkGoal < cursor ? -1 : 0);
-    if (dir === 0) { aim = cursor; return; }
+    if (dir === 0) { aim = cursor; }
     /* If we are currently heading the other way we are part-way along the
        segment behind us, so walk back to points[cursor] first. Retargeting
        never cuts a corner. */
-    if (aim !== null && (aim - cursor) * dir < 0) aim = cursor;
+    else if (aim !== null && (aim - cursor) * dir < 0) aim = cursor;
     else aim = cursor + dir;
+
+    /* Turning round mid-walk sheds most of the speed, the way a body has to
+       stop before it can go back. Turning a corner does not: there the old
+       and new waypoints are not on opposite sides of the sprite. */
+    if (walking && pos && prev !== null && prev !== aim) {
+      var a = points[prev], b = points[aim];
+      if ((a.x - pos.x) * (b.x - pos.x) + (a.y - pos.y) * (b.y - pos.y) < 0) speed *= 0.25;
+    }
+  }
+
+  /* Path distance still to walk, from where the sprite is to walkGoal. Used
+     to brake for the FINAL stop only, so a run of quick presses carries
+     straight through the pipes in between instead of slowing at each. */
+  function remainingPath() {
+    var d = Math.hypot(points[aim].x - pos.x, points[aim].y - pos.y);
+    var dir = walkGoal > aim ? 1 : -1;
+    for (var k = aim; k !== walkGoal; k += dir) {
+      d += Math.hypot(points[k + dir].x - points[k].x, points[k + dir].y - points[k].y);
+    }
+    return d;
   }
 
   function walkToPoint(target, done) {
@@ -355,6 +394,7 @@
       busy = false;
       var cb = walkDone; walkDone = null;
       if (cb) cb();
+      updatePreview();
       return;
     }
 
@@ -368,6 +408,8 @@
 
     walking = true;
     busy    = true;
+    speed   = 0;
+    hidePreview();
     player.classList.remove('is-idle');
     player.classList.add('is-walking');
 
@@ -378,22 +420,33 @@
       var dt = Math.min((now - last) / 1000, 0.05);
       last = now;
 
-      var goal = points[aim];
-      var dx = goal.x - pos.x, dy = goal.y - pos.y;
-      var dist = Math.hypot(dx, dy);
-      var move = WALK_SPEED * dt;
+      /* Speed up from standing, but never faster than lets us stop in the
+         path that is left. */
+      var brake = Math.sqrt(2 * WALK_DECEL * remainingPath());
+      speed = Math.min(WALK_SPEED, speed + WALK_ACCEL * dt, Math.max(brake, WALK_MIN));
 
-      if (dx > 1) player.classList.remove('is-flipped');
-      else if (dx < -1) player.classList.add('is-flipped');
+      /* Spend this frame's movement along the path, carrying any left over
+         through corners so the sprite does not hitch at each one. */
+      var left = speed * dt;
+      while (left > 0) {
+        var goal = points[aim];
+        var dx = goal.x - pos.x, dy = goal.y - pos.y;
+        var dist = Math.hypot(dx, dy);
 
-      if (dist <= move) {
-        pos.x = goal.x; pos.y = goal.y;
-        cursor = aim;
-        if (cursor === walkGoal) { finish(); return; }
-        aimAtGoal();
-      } else {
-        pos.x += dx / dist * move;
-        pos.y += dy / dist * move;
+        if (dx > 1) player.classList.remove('is-flipped');
+        else if (dx < -1) player.classList.add('is-flipped');
+
+        if (dist <= left) {
+          pos.x = goal.x; pos.y = goal.y;
+          left -= dist;
+          cursor = aim;
+          if (cursor === walkGoal) { finish(); return; }
+          aimAtGoal();
+        } else {
+          pos.x += dx / dist * left;
+          pos.y += dy / dist * left;
+          left = 0;
+        }
       }
 
       placeSprite(pos);
@@ -401,7 +454,7 @@
       collectCoins(pos);
 
       stepTick += dt;
-      if (stepTick > 0.22) { stepTick = 0; SITE.sfx.step(); }
+      if (stepTick > 0.15) { stepTick = 0; SITE.sfx.step(); }
 
       requestAnimationFrame(frame);
     }
@@ -413,8 +466,10 @@
       player.classList.add('is-idle');
       walking = false;
       busy    = false;
+      speed   = 0;
       var cb = walkDone; walkDone = null;
       if (cb) cb();
+      updatePreview();
     }
 
     requestAnimationFrame(frame);
@@ -515,6 +570,7 @@
 
       entering = true;
       busy = true;
+      hidePreview();
       player.classList.remove('is-idle');
       player.classList.add('is-entering');
       stop.el.classList.add('is-diving');
@@ -550,6 +606,7 @@
       if (!el) return;
       selected = parseInt(el.dataset.stop, 10);
       paintSelection();
+      updatePreview();
     });
 
     if (castleEl) {
@@ -560,6 +617,7 @@
       castleEl.addEventListener('focus', function () {
         selected = stops.length - 1;
         paintSelection();
+        updatePreview();
       });
     }
 
@@ -681,7 +739,7 @@
      BOOT
      ====================================================================== */
   function init() {
-    player.innerHTML = PLAYER_SVG;
+    player.innerHTML = buildPlayerSvg(window.PLAYER_SPRITE);
     player.classList.add('is-idle');
 
     buildList();
@@ -727,6 +785,7 @@
      climbs out of the pipe, the same as returning by the corner pipe.
      ---------------------------------------------------------------------- */
   function restoredFromCache() {
+    hidePreview();
     var i = divedInto;
     divedInto = null;
     entering  = false;
@@ -750,6 +809,154 @@
     }
   }
 
+  /* ======================================================================
+     PROJECT PREVIEW
+     A small card that pops up beside a world while the player is standing on
+     it — never while walking past. Its layout mirrors the project page:
+     the world banner, a picture or video, a short abstract, the tech stack.
+     Everything in it comes from the world's entry in js/projects.js.
+     ====================================================================== */
+  var previewEl  = null;
+  var previewFor = -1;       // stop index the card currently describes
+
+  function previewLayer() {
+    if (!previewEl) {
+      previewEl = document.createElement('div');
+      previewEl.className = 'preview';
+      /* The node's own aria-label already carries the title and blurb, so a
+         screen reader is not read the same thing twice. */
+      previewEl.setAttribute('aria-hidden', 'true');
+      canvas.appendChild(previewEl);
+    }
+    return previewEl;
+  }
+
+  var VIDEO_RE = /\.(mp4|webm|mov|m4v)(\?.*)?$/i;
+
+  function previewMedia(p) {
+    if (p.media && VIDEO_RE.test(p.media)) {
+      return '<video src="' + esc(p.media) + '" muted loop playsinline autoplay preload="metadata"></video>';
+    }
+    if (p.media) return '<img src="' + esc(p.media) + '" alt="">';
+    /* No media yet: an empty screen showing where it will go. */
+    return '<span class="preview__placeholder">' +
+             (p.locked ? '?' : 'SCREENSHOT<br>OR VIDEO') +
+           '</span>';
+  }
+
+  function renderPreview(p) {
+    var el   = previewLayer();
+    var tech = (p.tech || []).slice(0, 3);
+    var chips = '';
+    for (var t = 0; t < tech.length; t++) chips += '<li>' + esc(tech[t]) + '</li>';
+
+    el.classList.toggle('preview--locked', !!p.locked);
+    el.innerHTML =
+      '<div class="preview__card">' +
+        '<div class="preview__banner">' +
+          '<span class="preview__world">WORLD ' + esc(p.world) + '</span>' +
+          '<span class="preview__title">' + esc(p.title) + '</span>' +
+        '</div>' +
+        '<div class="preview__media">' + previewMedia(p) + '</div>' +
+        '<p class="preview__abstract">' + esc(p.abstract || p.blurb || '') + '</p>' +
+        (chips ? '<ul class="preview__chips">' + chips + '</ul>' : '') +
+        '<p class="preview__cta">' +
+          (p.locked ? 'NOT PUBLISHED YET' : 'ENTER &gt;&gt; PLAY LEVEL') +
+        '</p>' +
+      '</div>' +
+      '<span class="preview__tail"></span>';
+
+    /* Some browsers ignore the autoplay attribute on injected video. */
+    var v = el.querySelector('video');
+    if (v) { v.muted = true; var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+  }
+
+  /* Where the card goes, best first:
+       1. above the sign — the sky is empty, so it covers nothing;
+       2. above the pipe, over the node's OWN sign — that sign only repeats
+          the world and title already in the card's banner, so nothing is
+          lost (short windows, e.g. an iPad in landscape, land here);
+       3. either of those again with a compact card (no chips, two-line
+          abstract) when the full one is a few pixels too tall;
+       4. beside the node — last resort. Pipes are 300px apart, so this
+          always lands on the neighbouring sign. */
+  var GAP = 18, EDGE = 10, HINT = 64;      // HINT: room for the controls bar
+
+  function aboveTop(stop) {
+    var pt = points[stop.point], h = previewEl.offsetHeight;
+    var block   = stop.el.querySelector('.pipe, .qblock');   // pipe, or ? block
+    var signTop = pt.y - stop.el.offsetHeight;
+    var baseTop = pt.y - (block ? block.offsetHeight : stop.el.offsetHeight);
+    if (signTop - GAP - h >= EDGE) return signTop - GAP - h;
+    if (baseTop - GAP - h >= EDGE) return baseTop - GAP - h;
+    return null;
+  }
+
+  function placePreview(stop) {
+    var el = previewEl;
+    var pt = points[stop.point];
+    var viewL = viewport.scrollLeft, viewR = viewL + viewport.clientWidth;
+    var mode, left, top;
+
+    el.classList.remove('preview--compact');
+    top = aboveTop(stop);
+    if (top === null) {
+      el.classList.add('preview--compact');
+      top = aboveTop(stop);
+      if (top === null) el.classList.remove('preview--compact');
+    }
+
+    if (top !== null) {
+      mode = 'above';
+      var w = el.offsetWidth;
+      left = Math.max(viewL + EDGE, Math.min(pt.x - w / 2, viewR - EDGE - w));
+      el.style.setProperty('--tail-x', Math.max(22, Math.min(pt.x - left, w - 22)) + 'px');
+    } else {
+      var cw = el.offsetWidth, ch = el.offsetHeight;
+      var nodeW = stop.el.offsetWidth, nodeH = stop.el.offsetHeight;
+      var rightX = pt.x + nodeW / 2 + GAP;
+      var leftX  = pt.x - nodeW / 2 - GAP - cw;
+      mode = (rightX + cw <= viewR - EDGE || leftX < viewL + EDGE) ? 'right' : 'left';
+      left = mode === 'right' ? rightX : leftX;
+      var midY = pt.y - nodeH / 2;
+      top  = Math.max(EDGE, Math.min(midY - ch / 2, height - ch - HINT));
+      el.style.setProperty('--tail-y', Math.max(22, Math.min(midY - top, ch - 22)) + 'px');
+    }
+
+    el.style.left = left + 'px';
+    el.style.top  = top + 'px';
+    el.classList.toggle('preview--above', mode === 'above');
+    el.classList.toggle('preview--right', mode === 'right');
+    el.classList.toggle('preview--left',  mode === 'left');
+  }
+
+  function hidePreview() {
+    if (!previewEl) return;
+    previewEl.classList.remove('is-on');
+    var v = previewEl.querySelector('video');
+    if (v) v.pause();
+    previewFor = -1;
+  }
+
+  /* Show the card only while the sprite is standing still on the selected
+     world. Called whenever that might have just become true or false. */
+  function updatePreview() {
+    var stop = stops[selected];
+    var standing = started && !walking && !entering && !busy &&
+                   stop && stop.kind === 'world' && cursor === stop.point;
+    if (!standing) { hidePreview(); return; }
+
+    var el = previewLayer();
+    if (previewFor !== selected) {
+      renderPreview(stop.project);
+      previewFor = selected;
+      el.classList.remove('is-on');
+      void el.offsetWidth;                 // restart the pop-in
+    }
+    placePreview(stop);
+    el.classList.add('is-on');
+  }
+
   /* Put the sprite on a stop with no walking. */
   function standAt(i) {
     selected = i;
@@ -760,6 +967,7 @@
     placeSprite(points[cursor]);
     paintSelection();
     centreOn(points[cursor].x, true);
+    updatePreview();
   }
 
   /* Rise up out of the pipe. The sprite begins collapsed inside the mouth,
@@ -767,6 +975,7 @@
      occlusion as going in, in reverse: head first, feet last. */
   function emerge(i) {
     busy = true;
+    hidePreview();
     player.classList.remove('is-idle');
     player.classList.add('is-exiting');
     stops[i].el.classList.add('is-rising');
@@ -775,6 +984,7 @@
       player.classList.add('is-idle');
       stops[i].el.classList.remove('is-rising');
       busy = false;
+      updatePreview();
     }, EMERGE_MS);
   }
 
