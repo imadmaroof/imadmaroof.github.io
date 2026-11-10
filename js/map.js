@@ -59,6 +59,7 @@
   var cursor   = 0;    // index into points: where the sprite currently stands
   var selected = 0;    // index into stops
   var entering = false;// the pipe dive / warp has begun; the page is leaving
+  var divedInto = null;// stop index of the pipe this page went down, if any
 
   /* Pipe-entry timing. The dive is 340ms (hop, hang, sink) and the iris starts
      closing 40ms before it ends so the two overlap instead of queueing —
@@ -460,6 +461,7 @@
      on, and it moves on every press — the sprite then chases it. Presses are
      never dropped for being mid-walk. */
   function stepBy(delta) {
+    if (entering) return;          // mid-dive: the page is already leaving
     if (!started) {
       /* Standing at the head of the trail: the first step forward is world
          one itself, and there is nothing behind it. */
@@ -507,6 +509,7 @@
       }
 
       rememberPipe(p.id);
+      divedInto = i;
 
       if (SITE.reducedMotion()) { entering = true; window.location.href = p.page; return; }
 
@@ -696,6 +699,10 @@
       }
     }
 
+    window.addEventListener('pageshow', function (ev) {
+      if (ev.persisted) restoredFromCache();
+    });
+
     /* Came back from a project page? Climb out of the pipe you went down,
        which is the entry animation played backwards. */
     var fromPipe = takePipe();
@@ -707,6 +714,39 @@
           break;
         }
       }
+    }
+  }
+
+  /* ----------------------------------------------------------------------
+     BACK BUTTON
+     Pressing Back after entering a pipe does not reload the map: the
+     browser restores it from its back-forward cache exactly as it was
+     frozen — sprite collapsed inside the pipe, sign faded, `entering` still
+     set so Enter is ignored — and none of init() runs again. js/site.js
+     reopens the iris; this puts the map itself back in working order and
+     climbs out of the pipe, the same as returning by the corner pipe.
+     ---------------------------------------------------------------------- */
+  function restoredFromCache() {
+    var i = divedInto;
+    divedInto = null;
+    entering  = false;
+    busy      = false;
+    walkDone  = null;
+
+    /* This page handles the climb-out itself. Clear the hand-off too, or a
+       later fresh visit to the map would climb out of a pipe for no reason. */
+    takePipe();
+
+    player.classList.remove('is-entering', 'is-walking', 'is-exiting');
+    player.classList.add('is-idle');
+    var faded = canvas.querySelectorAll('.node.is-diving');
+    for (var k = 0; k < faded.length; k++) faded[k].classList.remove('is-diving');
+
+    if (i !== null && stops[i]) {
+      standAt(i);
+      if (!SITE.reducedMotion()) emerge(i);
+    } else if (started && stops[selected]) {
+      standAt(selected);
     }
   }
 
