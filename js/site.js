@@ -170,6 +170,7 @@
 
     sfx.warp();
     rememberIris(cx, cy);
+    lastClose = { fx: cx / window.innerWidth, fy: cy / window.innerHeight };
 
     var el = irisLayer();
     var r  = coverRadius(cx, cy);
@@ -188,20 +189,20 @@
     }, opts.delay || 0);
   }
 
-  /* Open the iris on arrival, from wherever the last page closed it. */
-  var arrivedFrom = null;
-  function arrive() {
-    arrivedFrom = takeIris();
-    if (reducedMotion()) return;
-
-    var fx = arrivedFrom ? arrivedFrom.fx : 0.5;
-    var fy = arrivedFrom ? arrivedFrom.fy : 0.5;
+  /* Grow the iris out from (fx, fy), given as fractions of the viewport. */
+  var lastClose = null;          // where THIS page last closed its iris
+  function openIris(fx, fy) {
+    if (reducedMotion()) {
+      if (irisEl) irisEl.classList.remove('is-on', 'is-blocking');
+      return;
+    }
     var cx = fx * window.innerWidth;
     var cy = fy * window.innerHeight;
 
     var el = irisLayer();
     var r  = coverRadius(cx, cy);
 
+    el.classList.remove('is-blocking');
     el.style.transition = 'none';
     placeIris(el, cx, cy, 0);
     el.classList.add('is-on');
@@ -214,11 +215,44 @@
     }, IRIS_OPEN);
   }
 
+  /* Open the iris on arrival, from wherever the last page closed it. */
+  var arrivedFrom = null;
+  function arrive() {
+    arrivedFrom = takeIris();
+    openIris(arrivedFrom ? arrivedFrom.fx : 0.5,
+             arrivedFrom ? arrivedFrom.fy : 0.5);
+  }
+
+  /* ----------------------------------------------------------------------
+     BACK / FORWARD BUTTONS
+     Browsers keep recently left pages in a back-forward cache and, on Back,
+     restore them exactly as they were frozen — without running any of the
+     page's start-up code again. A page left through warpTo() was frozen
+     with its iris fully shut, so it would come back as a solid block of
+     colour that only a refresh could clear. On a restore, undo the exit
+     and play the arrival instead.
+     ---------------------------------------------------------------------- */
+  function restoredFromCache() {
+    /* The corner pipe sank on the way out; let it rise back into view. */
+    var sunk = document.querySelectorAll('.is-warping');
+    for (var i = 0; i < sunk.length; i++) sunk[i].classList.remove('is-warping');
+
+    if (irisEl && irisEl.classList.contains('is-on')) {
+      var at = lastClose || { fx: 0.5, fy: 0.5 };
+      lastClose = null;
+      openIris(at.fx, at.fy);
+    }
+  }
+
   /* ======================================================================
      BOOT
      ====================================================================== */
   function boot() {
     arrive();
+
+    window.addEventListener('pageshow', function (ev) {
+      if (ev.persisted) restoredFromCache();
+    });
 
     /* Sound toggle button in the HUD. */
     var toggle = document.querySelector('[data-sound-toggle]');
