@@ -1,4 +1,4 @@
-# Imad Aboo — Portfolio
+# Imad Aboo's Portfolio
 
 My personal portfolio, live at **[imadmaroof.github.io](https://imadmaroof.github.io)**.
 
