@@ -89,6 +89,10 @@
   --suit-lo:        #1b2038;
   --shoe:           #120e16;
 
+  /* --- chest + skill icons (js/sprite.js) -------------------------------- */
+  --water-hi:       #7ef0e6;
+  --hot:            #ff9a3c;   /* a soldering iron's tip                     */
+
   /* --- text -------------------------------------------------------------- */
   --text:           #241c2c;
   --text-soft:      #57506b;
@@ -982,6 +986,246 @@ p:last-child { margin-bottom: 0; }
   .preview.is-on { animation: none; }
 }
 
+/* --- 6m. ? blocks (power-ups) ----------------------------------------------
+   Float over the start of the path and between worlds. Jump into one from
+   underneath and it opens a chest of skills (js/chest.js).
+   -------------------------------------------------------------------------- */
+.powerup {
+  position: absolute;
+  transform: translate(-50%, -100%);   /* `top` is the block's underside */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0; margin: 0;
+  border: 0; background: none;
+  font: inherit; color: inherit;
+  cursor: pointer;
+  z-index: 7;
+}
+.qblock--mini {
+  position: relative;
+  width: 44px; height: 44px;
+  font-size: 16px;
+  box-shadow:
+    inset 3px 3px 0 var(--gold-hi),
+    inset -3px -3px 0 var(--gold-lo),
+    3px 4px 0 rgba(0, 0, 0, .3);
+}
+.qblock--mini::before {
+  width: 44px; height: 44px;
+  left: -3px; top: -3px;
+  background:
+    radial-gradient(circle 2px at 7px 7px,   var(--gold-deep) 99%, transparent),
+    radial-gradient(circle 2px at 37px 7px,  var(--gold-deep) 99%, transparent),
+    radial-gradient(circle 2px at 7px 37px,  var(--gold-deep) 99%, transparent),
+    radial-gradient(circle 2px at 37px 37px, var(--gold-deep) 99%, transparent);
+}
+/* an unopened block glints, like the ones in the games */
+@keyframes qglint {
+  0%, 80%   { color: var(--gold-deep); }
+  90%       { color: var(--panel-hi); }
+}
+.powerup:not(.is-used) .qblock--mini { animation: qglint 1.6s steps(1, end) infinite; }
+.powerup:not(.is-used) .qblock--mini.is-bumped { animation: qbump .28s steps(4, end); }
+
+/* opened: an empty brown block. Still works; jump into it to see it again. */
+.powerup.is-used .qblock--mini {
+  color: transparent;
+  text-shadow: none;
+  background: var(--dirt);
+  box-shadow:
+    inset 3px 3px 0 var(--dirt-hi),
+    inset -3px -3px 0 var(--dirt-lo),
+    3px 4px 0 rgba(0, 0, 0, .3);
+}
+.powerup.is-used .qblock--mini::before {
+  background:
+    radial-gradient(circle 2px at 7px 7px,   var(--dirt-deep) 99%, transparent),
+    radial-gradient(circle 2px at 37px 7px,  var(--dirt-deep) 99%, transparent),
+    radial-gradient(circle 2px at 7px 37px,  var(--dirt-deep) 99%, transparent),
+    radial-gradient(circle 2px at 37px 37px, var(--dirt-deep) 99%, transparent);
+}
+.powerup:hover .qblock--mini { transform: translateY(-2px); }
+.powerup.is-selected .node__cursor {
+  opacity: 1;
+  animation: cursor-bob .7s steps(2, end) infinite alternate;
+}
+
+/* --- 6n. punching a block ------------------------------------------------
+   Crouch, jump so the raised fist (the `hit` frame) just meets the block's
+   underside at 43%, land. The block sits BLOCK_LIFT = 102px above the path:
+   the 72px sprite plus this 30px jump. Kept in sync with js/map.js.
+   -------------------------------------------------------------------------- */
+@keyframes player-hit {
+  0%   { transform: translate(-50%, -100%) translateY(0)     scale(1, 1); }
+  15%  { transform: translate(-50%, -100%) translateY(0)     scale(1.08, .92); }
+  43%  { transform: translate(-50%, -100%) translateY(-30px) scale(.96, 1.04); }
+  58%  { transform: translate(-50%, -100%) translateY(-28px) scale(1, 1); }
+  100% { transform: translate(-50%, -100%) translateY(0)     scale(1, 1); }
+}
+.player.is-hitting { animation: player-hit 300ms cubic-bezier(.3, 0, .5, 1) forwards; }
+.player.is-hitting .fr-idle { animation: fr-hit-stand 300ms steps(1, end) forwards; }
+.player.is-hitting .fr-hit  { animation: fr-hit-fist  300ms steps(1, end) forwards; }
+@keyframes fr-hit-stand { 0% { opacity: 1; } 15% { opacity: 0; } 85% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes fr-hit-fist  { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 0; } 100% { opacity: 0; } }
+
+/* --- 6o. the chest screen (js/chest.js) -----------------------------------
+   A reward summary, all at once: the chest drops in, the lid pops open at
+   260ms with a burst of light, and every skill tile comes out of the chest
+   into place with a 50ms stagger, each new level pip flashing in. With five
+   skills everything is on screen by about 800ms.
+   -------------------------------------------------------------------------- */
+.chest-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 900;                       /* above the HUD, below the iris */
+  display: grid;
+  place-items: center;
+  padding: 28px 16px;
+  overflow-y: auto;
+  background: rgba(23, 18, 38, .9);
+  cursor: pointer;
+  outline: none;
+  animation: chest-fade-in 120ms linear backwards;
+}
+.chest-screen.is-closing { animation: chest-fade-out 120ms linear forwards; }
+@keyframes chest-fade-in  { from { opacity: 0; } }
+@keyframes chest-fade-out { to   { opacity: 0; } }
+
+.chest-screen__inner { width: min(620px, 100%); text-align: center; }
+
+.chest-screen__stage {
+  position: relative;
+  width: 108px; height: 84px;         /* the 18 x 14 chest at 6x */
+  margin: 0 auto 10px;
+}
+.chest-screen__chest {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%; height: 100%;
+  filter: drop-shadow(4px 5px 0 rgba(0, 0, 0, .45));
+  animation: chest-drop 180ms steps(4, end) backwards;
+}
+.chest-screen__chest svg { display: block; width: 100%; height: 100%; }
+.chest-screen__chest .fr-open   { opacity: 0; animation: chest-lid-on  1ms 260ms forwards; }
+.chest-screen__chest .fr-closed {             animation: chest-lid-off 1ms 260ms forwards; }
+@keyframes chest-drop    { from { transform: translateY(-42px) scale(.7); } }
+@keyframes chest-lid-on  { to { opacity: 1; } }
+@keyframes chest-lid-off { to { opacity: 0; } }
+
+/* the burst of light behind the chest as it opens */
+.chest-screen__rays {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 300px; height: 300px;
+  margin: -150px 0 0 -150px;
+  background: repeating-conic-gradient(rgba(255, 233, 138, .55) 0 9deg, transparent 9deg 30deg);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%);
+          mask: radial-gradient(circle, #000 18%, transparent 68%);
+  opacity: 0;
+  animation: chest-rays 320ms 240ms steps(5, end) forwards;
+}
+@keyframes chest-rays {
+  from { opacity: 0; transform: scale(.3); }
+  50%  { opacity: 1; }
+  to   { opacity: .7; transform: scale(1); }
+}
+
+.chest-screen__title {
+  margin: 0 0 6px;
+  font-size: clamp(14px, 2.4vw, 20px);
+  color: var(--gold);
+  text-shadow: 3px 3px 0 var(--gold-deep);
+  animation: chest-pop 160ms 260ms steps(3, end) backwards;
+}
+.chest-screen__summary {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--water-hi);
+  animation: chest-pop 160ms 300ms steps(3, end) backwards;
+}
+@keyframes chest-pop { from { opacity: 0; transform: scale(.6); } }
+
+.chest-screen__loot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  text-align: left;
+}
+.loot {
+  width: 290px;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  column-gap: 10px;
+  row-gap: 5px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: var(--bevel) solid var(--ink);
+  box-shadow:
+    inset 3px 3px 0 var(--panel-hi),
+    inset -3px -3px 0 var(--panel-lo),
+    4px 4px 0 rgba(0, 0, 0, .4);
+  animation: loot-pop 240ms steps(5, end) backwards;
+  animation-delay: calc(320ms + var(--i) * 50ms);
+}
+/* tiles come up out of the chest and land in place */
+@keyframes loot-pop { from { opacity: 0; transform: translateY(-46px) scale(.35); } }
+
+.loot__icon { grid-row: 1 / span 3; align-self: start; width: 30px; height: 30px; }
+.loot__icon svg { display: block; width: 100%; height: 100%; }
+.loot__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.loot__name { font-family: var(--font-pixel); font-size: 9px; line-height: 1.4; color: var(--text); }
+.loot__gain { font-family: var(--font-pixel); font-size: 10px; color: var(--pipe-lo); }
+.loot__level { font-family: var(--font-pixel); font-size: 7px; color: var(--text-soft); }
+.loot__bar { display: flex; gap: 3px; }
+.pip {
+  width: 14px; height: 8px;
+  background: var(--panel-lo);
+  border: 2px solid var(--ink);
+}
+.pip.is-had { background: var(--water); }
+.pip.is-new {
+  background: var(--gold);
+  animation: pip-fill 200ms steps(2, end) backwards;
+  animation-delay: calc(500ms + var(--i) * 50ms + var(--p) * 70ms);
+}
+@keyframes pip-fill {
+  from { background: var(--panel-lo); }
+  50%  { background: var(--panel-hi); }
+}
+.loot__detail {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+.chest-screen__hint {
+  margin: 16px 0 0;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--locked);
+  animation: chest-fade-in 200ms 700ms backwards;
+}
+
+@media (max-width: 640px) {
+  .loot { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .powerup .qblock--mini { animation: none !important; }
+  .chest-screen, .chest-screen * { animation: none !important; }
+  .chest-screen__chest .fr-closed { opacity: 0; }
+  .chest-screen__chest .fr-open   { opacity: 1; }
+  .chest-screen__rays { opacity: .6; }
+}
+
 /* --------------------------------------------------------------------------
    7. HINT BAR (controls legend, desktop map only)
    -------------------------------------------------------------------------- */
@@ -1351,6 +1595,16 @@ p:last-child { margin-bottom: 0; }
 .px-suit-hi    { fill: var(--suit-hi); }
 .px-suit-lo    { fill: var(--suit-lo); }
 .px-shoe       { fill: var(--shoe); }
+.px-dirt       { fill: var(--dirt); }
+.px-dirt-hi    { fill: var(--dirt-hi); }
+.px-dirt-lo    { fill: var(--dirt-lo); }
+.px-dirt-deep  { fill: var(--dirt-deep); }
+.px-water      { fill: var(--water); }
+.px-water-hi   { fill: var(--water-hi); }
+.px-water-lo   { fill: var(--water-lo); }
+.px-panel-alt    { fill: var(--panel-alt); }
+.px-panel-alt-lo { fill: var(--panel-alt-lo); }
+.px-hot        { fill: var(--hot); }
 .px-stone      { fill: var(--stone); }
 .px-stone-hi   { fill: var(--stone-hi); }
 .px-stone-lo   { fill: var(--stone-lo); }

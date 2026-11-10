@@ -92,6 +92,67 @@ const PROJECTS = [
 
 ];
 
-/* Publish for index.html. (See the note above about why this is a global
-   and not an ES module export.) */
+/* Power-ups: a ? block on the path that opens a chest of skills. `after` is
+   'start' or the id of the world it follows. A skill that appears in more
+   than one chest levels up. */
+const POWERUPS = [
+
+  {
+    after:  'start',
+    title:  'STARTING KIT',
+    skills: [
+      { name: 'CODING',      gain: 1, detail: 'Placeholder: one line on where this started.' },
+      { name: 'ELECTRONICS', gain: 1, detail: 'Placeholder: one line on where this started.' }
+    ]
+  },
+
+  {
+    after:  'world-1',
+    title:  'WORLD 1-1 LOOT',
+    skills: [
+      { name: 'CAD',         gain: 1, detail: 'Placeholder: what this project taught you.' },
+      { name: '3D PRINTING', gain: 1, detail: 'Placeholder: what this project taught you.' },
+      { name: 'CODING',      gain: 1, detail: 'Placeholder: what this project taught you.' }
+    ]
+  },
+
+  {
+    after:  'world-2',
+    title:  'WORLD 1-2 LOOT',
+    skills: [
+      { name: 'SOLDERING',   gain: 1, detail: 'Placeholder: what this project taught you.' },
+      { name: 'ELECTRONICS', gain: 1, detail: 'Placeholder: what this project taught you.' }
+    ]
+  },
+
+  {
+    after:  'world-3',
+    title:  'WORLD 1-3 LOOT',
+    skills: [
+      { name: 'CAD',         gain: 1, detail: 'Placeholder: what this project taught you.' },
+      { name: 'CODING',      gain: 1, detail: 'Placeholder: what this project taught you.' }
+    ]
+  },
+
+  {
+    after:  'world-4',
+    title:  'WORLD 2-1 LOOT',
+    skills: [
+      { name: '3D PRINTING', gain: 1, detail: 'Placeholder: what this project taught you.' },
+      { name: 'SOLDERING',   gain: 1, detail: 'Placeholder: what this project taught you.' }
+    ]
+  },
+
+  {
+    after:  'world-5',
+    title:  'WORLD 2-2 LOOT',
+    skills: [
+      { name: 'ELECTRONICS', gain: 1, detail: 'Placeholder: what this project taught you.' },
+      { name: 'CODING',      gain: 1, detail: 'Placeholder: what this project taught you.' }
+    ]
+  }
+
+];
+
 window.PROJECTS = PROJECTS;
+window.POWERUPS = POWERUPS;

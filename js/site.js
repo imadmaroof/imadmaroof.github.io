@@ -85,6 +85,12 @@
     bump: function () { if (!this.enabled) return; this.tone(147, 0, 0.09, 'square', 0.07); },
     select: function () { if (!this.enabled) return; this.tone(660, 0, 0.06, 'square', 0.05); },
     warp: function () { if (!this.enabled) return; this.sweep(880, 110, 0.5); },
+    /* A rising arpeggio for a chest opening. */
+    chest: function () {
+      if (!this.enabled) return;
+      var notes = [523, 659, 784, 1047, 1319];
+      for (var i = 0; i < notes.length; i++) this.tone(notes[i], i * 0.055, 0.12, 'square', 0.05);
+    },
 
     toggle: function () {
       this.enabled = !this.enabled;

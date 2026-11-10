@@ -9,19 +9,23 @@
         of projects (no hand-placed coordinates anywhere)
      2. drops a node on each bend of that path — a green pipe for published
         worlds, a greyed "?" block for locked ones
-     3. walks the player sprite along the path on click / arrow keys
-     4. plays the enter-pipe animation, then warps to the project page
-     5. re-lays everything out on resize
-     6. renders the mobile level-select list from the same array
+     3. floats a gold ? block over the start and between worlds, from
+        window.POWERUPS; jumping into one opens a chest of skills
+     4. walks the player sprite along the path on click / left and right
+     5. plays the enter-pipe animation, then warps to the project page
+     6. re-lays everything out on resize
+     7. renders the mobile level-select list from the same array
    ========================================================================== */
 (function () {
   'use strict';
 
   var projects = window.PROJECTS || [];
+  var powerups = window.POWERUPS || [];
   var SITE = window.SITE;
 
   /* --- layout constants -------------------------------------------------- */
-  var NODE_GAP   = 300;   // horizontal px between world nodes
+  var NODE_GAP   = 340;   // horizontal px between world nodes (a ? block sits halfway)
+  var START_X    = 70;    // px from the left edge to the start of the path
   var START_PAD  = 210;   // px from the left edge to world 1
   var CASTLE_GAP = 280;   // px from the last world to the castle
   var END_PAD    = 190;   // px of map after the castle
@@ -40,6 +44,13 @@
   var NODE_Y = [0.62, 0.82, 0.66, 0.88, 0.70, 0.80];
   var LAND_TOP  = 0.40;   // where the ground starts
   var TRAIL_Y   = 0.74;   // y of the start point and the castle
+
+  /* ? blocks. The block's underside sits BLOCK_LIFT px above the path, which
+     is the 72px sprite plus the height of the jump that punches it. Kept in
+     sync with the player-hit keyframes in css/style.css. */
+  var BLOCK_LIFT = 102;
+  var HIT_PEAK   = 130;   // ms into the jump when the fist meets the block
+  var HIT_MS     = 300;   // the whole jump, crouch to landing
 
   /* --- element handles --------------------------------------------------- */
   var viewport = document.getElementById('map-viewport');
@@ -60,7 +71,11 @@
 
   /* --- state ------------------------------------------------------------- */
   var points   = [];   // every corner of the path, in order
-  var stops    = [];   // the places you can stand: worlds, then the castle
+  var stops    = [];   // the places you can stand: the start, worlds, ? blocks, the castle
+  var worldStop = [];  // project index -> its index in stops
+  var lootBar  = 5;    // length of every level bar in every chest
+  var opened   = {};   // ? blocks hit this visit, by their `after` key
+  var hitting  = false;// mid-jump at a ? block
   var coinEls  = [];   // {x, y, el, taken}
   var cursor   = 0;    // index into points: where the sprite currently stands
   var selected = 0;    // index into stops
@@ -91,7 +106,6 @@
   var DIVE_MS      = 340;
   var EMERGE_MS    = 380;
   var IRIS_OVERLAP = 40;
-  var started  = false;// has the player left the start of the path yet?
   var busy     = false;
   var width    = 0;
   var height   = 0;
@@ -109,27 +123,7 @@
      into one rect, which keeps a 16x24 sprite to a few dozen elements per
      frame instead of hundreds. */
   function buildPlayerSvg(sprite) {
-    var w = sprite.width, h = sprite.height;
-    var out = '<svg viewBox="0 0 ' + w + ' ' + h + '" shape-rendering="crispEdges" aria-hidden="true">';
-    for (var name in sprite.frames) {
-      if (!Object.prototype.hasOwnProperty.call(sprite.frames, name)) continue;
-      var rows = sprite.frames[name];
-      out += '<g class="fr fr-' + name + '">';
-      for (var y = 0; y < rows.length; y++) {
-        var row = rows[y], x = 0;
-        while (x < row.length) {
-          var ch = row.charAt(x), run = 1;
-          while (x + run < row.length && row.charAt(x + run) === ch) run++;
-          if (ch !== '.' && sprite.palette[ch]) {
-            out += '<rect x="' + x + '" y="' + y + '" width="' + run +
-                   '" height="1" class="px-' + sprite.palette[ch] + '"/>';
-          }
-          x += run;
-        }
-      }
-      out += '</g>';
-    }
-    return out + '</svg>';
+    return window.PIXEL.svg(sprite.frames, sprite.palette, sprite.width, sprite.height);
   }
 
   /* A spinning coin. */
@@ -152,28 +146,81 @@
   function nodeY(i)  { return Math.round(height * NODE_Y[i % NODE_Y.length]); }
   function castleX() { return nodeX(Math.max(projects.length - 1, 0)) + CASTLE_GAP; }
 
-  /* Build the right-angled path and remember which point each stop sits on. */
+  /* The power-up that follows a given stop ('start' or a world id), if any. */
+  function powerupAfter(key) {
+    for (var i = 0; i < powerups.length; i++) {
+      if (powerups[i] && powerups[i].after === key) return powerups[i];
+    }
+    return null;
+  }
+
+  /* Build the right-angled path and remember which point each stop sits on.
+     A ? block between two stops goes halfway along the straight run leaving
+     the first one, so adding power-ups never changes the shape of the path. */
   function buildPath() {
     points = [];
     stops  = [];
+    worldStop = [];
 
     var startY = Math.round(height * TRAIL_Y);
-    points.push({ x: 70, y: startY });
+    points.push({ x: START_X, y: startY });
+    /* The start of the path is a stop in its own right: you can always walk
+       back to it, and it may carry the first ? block. */
+    stops.push({ kind: 'start', powerup: powerupAfter('start'), point: 0, el: null });
 
     var prev = points[0];
 
+    function blockOnRun(afterKey, nextX) {
+      var pu = powerupAfter(afterKey);
+      if (!pu) return;
+      points.push({ x: Math.round((prev.x + nextX) / 2), y: prev.y });
+      stops.push({ kind: 'powerup', powerup: pu, point: points.length - 1, el: null });
+    }
+
     for (var i = 0; i < projects.length; i++) {
       var x = nodeX(i), y = nodeY(i);
+      if (i > 0) blockOnRun(projects[i - 1].id, x);
       if (x !== prev.x && y !== prev.y) points.push({ x: x, y: prev.y }); // the corner
       points.push({ x: x, y: y });
       stops.push({ kind: 'world', project: projects[i], index: i, point: points.length - 1, el: null });
+      worldStop[i] = stops.length - 1;
       prev = points[points.length - 1];
     }
 
     var cx = castleX(), cy = Math.round(height * TRAIL_Y);
+    if (projects.length) blockOnRun(projects[projects.length - 1].id, cx);
     if (cx !== prev.x && cy !== prev.y) points.push({ x: cx, y: prev.y });
     points.push({ x: cx, y: cy });
     stops.push({ kind: 'castle', point: points.length - 1, el: castleEl });
+
+    tallyLoot();
+  }
+
+  /* Work out every chest's contents in the order you meet them on the path.
+     A skill that turns up in several chests levels up each time, so the
+     second CAD chest shows CAD going from level 1 to 2. Every bar uses the
+     same length (the highest level any skill reaches) so they compare. */
+  function tallyLoot() {
+    var totals = {};
+    lootBar = 5;
+    for (var i = 0; i < stops.length; i++) {
+      var pu = stops[i].powerup;
+      if (!pu) continue;
+      var loot = [];
+      var skills = pu.skills || [];
+      for (var k = 0; k < skills.length; k++) {
+        var sk = skills[k] || {};
+        var key = String(sk.name || '').trim().toUpperCase();
+        if (!key) continue;
+        var gain = Math.max(1, Math.round(sk.gain || 1));
+        var before = totals[key] || 0;
+        totals[key] = before + gain;
+        lootBar = Math.max(lootBar, totals[key]);
+        loot.push({ name: key, gain: gain, before: before, after: before + gain,
+                    detail: sk.detail || '', icon: sk.icon || '' });
+      }
+      stops[i].loot = loot;
+    }
   }
 
   function drawPath() {
@@ -190,7 +237,7 @@
   function buildNodes() {
     /* Nodes are rebuilt from scratch on every layout so adding a project is
        genuinely just "add an object to the array". */
-    var old = canvas.querySelectorAll('.node, .pipe-cap');
+    var old = canvas.querySelectorAll('.node, .pipe-cap, .powerup');
     for (var k = 0; k < old.length; k++) old[k].remove();
 
     for (var i = 0; i < projects.length; i++) {
@@ -199,7 +246,7 @@
       el.type = 'button';
       el.className = 'node' + (p.locked ? ' node--locked' : '');
       el.id = 'world-' + p.id;
-      el.dataset.stop = String(i);
+      el.dataset.stop = String(worldStop[i]);
       el.title = p.blurb || '';
       el.setAttribute('aria-label',
         'World ' + p.world + ', ' + p.title + (p.locked ? ' (locked)' : '') + '. ' + (p.blurb || ''));
@@ -219,12 +266,13 @@
               '<span class="pipe__body"></span>' +
             '</span>');
 
-      var pt = points[stops[i].point];
+      var st = stops[worldStop[i]];
+      var pt = points[st.point];
       el.style.left = pt.x + 'px';
       el.style.top  = pt.y + 'px';
 
       canvas.appendChild(el);
-      stops[i].el = el;
+      st.el = el;
 
       /* The front half of the pipe: a copy of the rim, pinned over the real
          one but outside the node, so it can be painted ABOVE the sprite.
@@ -241,8 +289,33 @@
         cap.style.left = pt.x + 'px';
         cap.style.top  = (pt.y - (pipe.offsetHeight - rim.offsetHeight)) + 'px';
         canvas.appendChild(cap);
-        stops[i].cap = cap;
+        st.cap = cap;
       }
+    }
+
+    buildBlocks();
+  }
+
+  /* --- ? blocks ---------------------------------------------------------- */
+  function buildBlocks() {
+    for (var i = 0; i < stops.length; i++) {
+      var st = stops[i];
+      if (!st.powerup) continue;
+      var n = (st.loot || []).length;
+      var el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'powerup' + (opened[st.powerup.after] ? ' is-used' : '');
+      el.dataset.stop = String(i);
+      el.setAttribute('aria-label', 'Power-up: ' + (st.powerup.title || 'skills') +
+        '. Opens a chest of ' + n + ' skill' + (n === 1 ? '' : 's') + '.');
+      el.innerHTML =
+        '<span class="node__cursor" aria-hidden="true"></span>' +
+        '<span class="qblock qblock--mini" aria-hidden="true">?</span>';
+      var pt = points[st.point];
+      el.style.left = pt.x + 'px';
+      el.style.top  = (pt.y - BLOCK_LIFT) + 'px';
+      canvas.appendChild(el);
+      st.el = el;
     }
   }
 
@@ -255,7 +328,7 @@
     for (var i = 1; i < points.length; i++) {
       var a = points[i - 1], b = points[i];
       if (a.y !== b.y) continue;                       // vertical run, skip
-      if (Math.abs(b.x - a.x) < 120) continue;         // too short to bother
+      if (Math.abs(b.x - a.x) < 140) continue;         // too short to bother
       var el = document.createElement('div');
       el.className = 'coin pixel';
       el.innerHTML = COIN_SVG;
@@ -293,9 +366,9 @@
     buildNodes();
     buildCoins();
 
-    /* Put the sprite back where it was standing — or at the very start of
-       the path if it has not moved yet. */
-    cursor = (started && stops[selected]) ? stops[selected].point : 0;
+    /* Put the sprite back on the stop it was standing on. */
+    if (selected > stops.length - 1) selected = 0;
+    cursor = stops[selected].point;
     placeSprite(points[cursor]);
     paintSelection();
     centreOn(points[cursor].x, true);
@@ -330,7 +403,6 @@
      the target stop. Under prefers-reduced-motion it just teleports.
      ====================================================================== */
   function walkTo(stopIndex, done) {
-    started = true;
     walkToPoint(stops[stopIndex].point, done);
   }
 
@@ -493,19 +565,14 @@
   function paintSelection() {
     for (var i = 0; i < stops.length; i++) {
       if (!stops[i].el) continue;
-      /* Before the first move the sprite is standing at the head of the
-         trail, not on a world, so no node should look selected. */
-      stops[i].el.classList.toggle('is-selected', started && i === selected);
+      stops[i].el.classList.toggle('is-selected', i === selected);
     }
   }
 
   function select(i, opts) {
     i = Math.max(0, Math.min(i, stops.length - 1));
-    if (i === selected && started && !(opts && opts.force)) return;
+    if (i === selected && !(opts && opts.force)) return;
     selected = i;
-    /* Committing to a stop counts as leaving the head of the trail. This has
-       to happen before painting, or the first step highlights nothing. */
-    if (opts && opts.walk) started = true;
     paintSelection();
     SITE.sfx.select();
     if (opts && opts.walk) walkTo(i);
@@ -516,15 +583,9 @@
      on, and it moves on every press — the sprite then chases it. Presses are
      never dropped for being mid-walk. */
   function stepBy(delta) {
-    if (entering) return;          // mid-dive: the page is already leaving
-    if (!started) {
-      /* Standing at the head of the trail: the first step forward is world
-         one itself, and there is nothing behind it. */
-      if (delta > 0) select(0, { walk: true, force: true });
-      return;
-    }
+    if (entering || hitting) return;  // mid-dive or mid-jump
     var next = selected + delta;
-    /* World one is the front of the map. Left from there does nothing. */
+    /* The start of the path is the front of the map, the castle the end. */
     if (next < 0 || next > stops.length - 1) return;
     select(next, { walk: true, force: true });
   }
@@ -533,12 +594,20 @@
     /* `entering` is the pipe-dive animation, which owns the screen until it
        navigates. A plain walk is NOT a reason to ignore a click — clicking
        mid-walk retargets the sprite. */
-    if (entering) return;
+    if (entering || hitting) return;
     var stop = stops[i];
+
+    /* A ? block: walk under it, then jump and punch it. The start of the
+       path is only a stop to stand on unless it has a block. */
+    if (stop.kind === 'powerup' || stop.kind === 'start') {
+      selected = i; paintSelection();
+      walkTo(i, function () { if (stop.powerup) hitBlock(i); });
+      return;
+    }
 
     /* Castle at the end of the road -> contact page. */
     if (stop.kind === 'castle') {
-      selected = i; started = true; paintSelection();
+      selected = i; paintSelection();
       walkTo(i, function () {
         entering = true;
         SITE.warpTo('pages/contact.html', { center: SITE.centreOf(castleEl) });
@@ -547,7 +616,7 @@
     }
 
     var p = stop.project;
-    selected = i; started = true; paintSelection();
+    selected = i; paintSelection();
 
     walkTo(i, function () {
       /* Locked worlds bump like an empty ? block and go nowhere. */
@@ -596,13 +665,13 @@
      ====================================================================== */
   function bindInput() {
     canvas.addEventListener('click', function (ev) {
-      var el = ev.target.closest('.node');
+      var el = ev.target.closest('.node, .powerup');
       if (!el) return;
       enter(parseInt(el.dataset.stop, 10));
     });
 
     canvas.addEventListener('focusin', function (ev) {
-      var el = ev.target.closest('.node');
+      var el = ev.target.closest('.node, .powerup');
       if (!el) return;
       selected = parseInt(el.dataset.stop, 10);
       paintSelection();
@@ -622,25 +691,30 @@
     }
 
     document.addEventListener('keydown', function (ev) {
-      if (ev.target.matches('input, textarea, select')) return;
+      if (ev.target.matches && ev.target.matches('input, textarea, select')) return;
+      if (window.CHEST && window.CHEST.isOpen()) return;
 
       switch (ev.key) {
         case 'ArrowRight':
-        case 'ArrowDown':
           ev.preventDefault();
           stepBy(1);
           break;
         case 'ArrowLeft':
-        case 'ArrowUp':
           ev.preventDefault();
           stepBy(-1);
+          break;
+        case 'ArrowUp':
+          /* Up is a jump, and only does anything under a ? block. Pressed
+             while still walking towards one, it jumps on arrival. */
+          ev.preventDefault();
+          if (stops[selected] && stops[selected].powerup) enter(selected);
           break;
         case 'Enter':
         case ' ':
           /* If a node button has focus the browser fires click for us. */
-          if (ev.target.closest && ev.target.closest('.node, .castle')) return;
+          if (ev.target.closest && ev.target.closest('.node, .castle, .powerup')) return;
           ev.preventDefault();
-          enter(started ? selected : 0);
+          enter(selected);
           break;
         default:
           break;
@@ -650,7 +724,7 @@
     /* Click-and-drag to pan the map. */
     var dragging = false, dragX = 0, dragScroll = 0, moved = 0;
     viewport.addEventListener('pointerdown', function (ev) {
-      if (ev.target.closest('.node, .castle')) return;
+      if (ev.target.closest('.node, .castle, .powerup')) return;
       dragging = true; moved = 0;
       dragX = ev.clientX;
       dragScroll = viewport.scrollLeft;
@@ -751,7 +825,7 @@
     if (hash) {
       for (var i = 0; i < projects.length; i++) {
         if ('world-' + projects[i].id === hash) {
-          standAt(i);
+          standAt(worldStop[i]);
           break;
         }
       }
@@ -767,8 +841,8 @@
     if (fromPipe) {
       for (var j = 0; j < projects.length; j++) {
         if (projects[j].id === fromPipe) {
-          standAt(j);
-          if (!SITE.reducedMotion()) emerge(j);
+          standAt(worldStop[j]);
+          if (!SITE.reducedMotion()) emerge(worldStop[j]);
           break;
         }
       }
@@ -789,6 +863,7 @@
     var i = divedInto;
     divedInto = null;
     entering  = false;
+    hitting   = false;
     busy      = false;
     walkDone  = null;
 
@@ -796,7 +871,7 @@
        later fresh visit to the map would climb out of a pipe for no reason. */
     takePipe();
 
-    player.classList.remove('is-entering', 'is-walking', 'is-exiting');
+    player.classList.remove('is-entering', 'is-walking', 'is-exiting', 'is-hitting');
     player.classList.add('is-idle');
     var faded = canvas.querySelectorAll('.node.is-diving');
     for (var k = 0; k < faded.length; k++) faded[k].classList.remove('is-diving');
@@ -804,7 +879,7 @@
     if (i !== null && stops[i]) {
       standAt(i);
       if (!SITE.reducedMotion()) emerge(i);
-    } else if (started && stops[selected]) {
+    } else if (stops[selected]) {
       standAt(selected);
     }
   }
@@ -942,7 +1017,7 @@
      world. Called whenever that might have just become true or false. */
   function updatePreview() {
     var stop = stops[selected];
-    var standing = started && !walking && !entering && !busy &&
+    var standing = !walking && !entering && !busy &&
                    stop && stop.kind === 'world' && cursor === stop.point;
     if (!standing) { hidePreview(); return; }
 
@@ -957,10 +1032,64 @@
     el.classList.add('is-on');
   }
 
+  /* ======================================================================
+     ? BLOCKS
+     Jump, punch the block from underneath, and it gives up a chest of the
+     skills listed for it in js/projects.js. The chest itself is js/chest.js.
+     ====================================================================== */
+  function hitBlock(i) {
+    var stop = stops[i];
+    if (!stop || !stop.powerup || hitting || entering || walking) return;
+    if (window.CHEST && window.CHEST.isOpen()) return;
+    if (cursor !== stop.point) return;      // only from directly underneath
+
+    hitting = true;
+    busy = true;
+    hidePreview();
+    var block = stop.el && stop.el.querySelector('.qblock');
+
+    function openChest() {
+      hitting = false;
+      busy = false;
+      opened[stop.powerup.after] = true;
+      if (stop.el) stop.el.classList.add('is-used');
+      if (SITE.sfx.chest) SITE.sfx.chest();
+      announce((stop.powerup.title || 'Power-up') + ' opened.');
+      window.CHEST.open({
+        title: stop.powerup.title,
+        loot: stop.loot || [],
+        barLength: lootBar,
+        onClose: function () { updatePreview(); }
+      });
+    }
+
+    if (SITE.reducedMotion()) { openChest(); return; }
+
+    player.classList.remove('is-idle');
+    player.classList.add('is-hitting');
+
+    /* The fist meets the block at the top of the jump. */
+    window.setTimeout(function () {
+      if (block) {
+        block.classList.remove('is-bumped');
+        void block.offsetWidth;
+        block.classList.add('is-bumped');
+      }
+      if (stop.el) stop.el.classList.add('is-used');
+      SITE.sfx.bump();
+    }, HIT_PEAK);
+
+    /* Landing. The chest opens as the feet touch down. */
+    window.setTimeout(function () {
+      player.classList.remove('is-hitting');
+      player.classList.add('is-idle');
+      openChest();
+    }, HIT_MS);
+  }
+
   /* Put the sprite on a stop with no walking. */
   function standAt(i) {
     selected = i;
-    started  = true;
     cursor   = stops[i].point;
     aim      = cursor;
     pos      = { x: points[cursor].x, y: points[cursor].y };
