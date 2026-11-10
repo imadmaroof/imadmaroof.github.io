@@ -95,42 +95,123 @@
   };
 
   /* ======================================================================
-     WARP — the fade-to-black screen transition between pages
+     IRIS — the circular wipe between pages
+
+     Leaving:  the hole shrinks onto the pipe until the screen is black.
+     Arriving: it grows back out from the same spot.
+
+     The centre travels between pages in sessionStorage as a fraction of the
+     viewport, so the circle reopens where it closed even though the second
+     page is a completely fresh document at a possibly different size.
      ====================================================================== */
-  var warpEl = null;
-  function warpLayer() {
-    if (!warpEl) {
-      warpEl = document.createElement('div');
-      warpEl.className = 'warp';
-      document.body.appendChild(warpEl);
+  var IRIS_CLOSE = 180;          // ms, leaving
+  var IRIS_OPEN  = 260;          // ms, arriving — a touch slower, it is a reveal
+  var STORE_IRIS = 'pixel-portfolio:iris';
+
+  var irisEl = null;
+  function irisLayer() {
+    if (!irisEl) {
+      irisEl = document.createElement('div');
+      irisEl.className = 'iris';
+      document.body.appendChild(irisEl);
     }
-    return warpEl;
+    return irisEl;
+  }
+
+  /* Radius that still covers the furthest corner from (cx, cy). Without this
+     an off-centre iris would start with black already showing in a corner. */
+  function coverRadius(cx, cy) {
+    var w = window.innerWidth, h = window.innerHeight;
+    return Math.ceil(Math.hypot(Math.max(cx, w - cx), Math.max(cy, h - cy))) + 2;
+  }
+
+  function placeIris(el, cx, cy, diameter) {
+    el.style.left   = cx + 'px';
+    el.style.top    = cy + 'px';
+    el.style.width  = diameter + 'px';
+    el.style.height = diameter + 'px';
+  }
+
+  /* Remember where the iris closed so the next page can open it there. */
+  function rememberIris(cx, cy) {
+    try {
+      sessionStorage.setItem(STORE_IRIS, JSON.stringify({
+        fx: cx / window.innerWidth,
+        fy: cy / window.innerHeight
+      }));
+    } catch (e) { /* private mode: the iris just falls back to centre */ }
+  }
+
+  function takeIris() {
+    try {
+      var raw = sessionStorage.getItem(STORE_IRIS);
+      sessionStorage.removeItem(STORE_IRIS);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
   }
 
   /**
-   * Navigate to href behind a pipe-warp wipe.
-   * With prefers-reduced-motion the wipe is skipped entirely and we go
-   * straight there — no animation, no delay.
+   * Navigate to href behind a closing iris.
+   *
+   * opts.center {x, y}  viewport coords to collapse onto; defaults to the
+   *                     middle of the screen.
+   * opts.delay          ms to wait before the iris starts closing, so a
+   *                     sprite animation can play first.
+   *
+   * With prefers-reduced-motion nothing animates and we navigate at once.
    */
-  function warpTo(href, delay) {
+  function warpTo(href, opts) {
     if (!href) return;
+    opts = opts || {};
     if (reducedMotion()) { window.location.href = href; return; }
+
+    var cx = opts.center ? opts.center.x : window.innerWidth / 2;
+    var cy = opts.center ? opts.center.y : window.innerHeight / 2;
+
     sfx.warp();
-    var layer = warpLayer();
+    rememberIris(cx, cy);
+
+    var el = irisLayer();
+    var r  = coverRadius(cx, cy);
+
     window.setTimeout(function () {
-      layer.classList.add('is-on');
-      window.setTimeout(function () { window.location.href = href; }, 300);
-    }, delay || 0);
+      el.style.transition = 'none';
+      placeIris(el, cx, cy, r * 2);
+      el.classList.add('is-on', 'is-blocking');
+      /* Flush the open state before starting the close, or the browser
+         collapses both writes into one frame and nothing animates. */
+      void el.offsetWidth;
+      el.style.transition = 'width ' + IRIS_CLOSE + 'ms ease-in, ' +
+                            'height ' + IRIS_CLOSE + 'ms ease-in';
+      placeIris(el, cx, cy, 0);
+      window.setTimeout(function () { window.location.href = href; }, IRIS_CLOSE);
+    }, opts.delay || 0);
   }
 
-  /* Fade the page up from black on arrival (skipped for reduced motion). */
+  /* Open the iris on arrival, from wherever the last page closed it. */
+  var arrivedFrom = null;
   function arrive() {
+    arrivedFrom = takeIris();
     if (reducedMotion()) return;
-    var layer = warpLayer();
-    layer.classList.add('is-on', 'is-arriving');
+
+    var fx = arrivedFrom ? arrivedFrom.fx : 0.5;
+    var fy = arrivedFrom ? arrivedFrom.fy : 0.5;
+    var cx = fx * window.innerWidth;
+    var cy = fy * window.innerHeight;
+
+    var el = irisLayer();
+    var r  = coverRadius(cx, cy);
+
+    el.style.transition = 'none';
+    placeIris(el, cx, cy, 0);
+    el.classList.add('is-on');
+    void el.offsetWidth;
+    el.style.transition = 'width ' + IRIS_OPEN + 'ms ease-out, ' +
+                          'height ' + IRIS_OPEN + 'ms ease-out';
+    placeIris(el, cx, cy, r * 2);
     window.setTimeout(function () {
-      layer.classList.remove('is-on', 'is-arriving');
-    }, 420);
+      el.classList.remove('is-on', 'is-blocking');
+    }, IRIS_OPEN);
   }
 
   /* ======================================================================
@@ -159,13 +240,16 @@
       if (!href) return;
       ev.preventDefault();
 
-      /* The corner pipe sinks out of view before the screen wipes. */
+      /* The corner pipe sinks out of view before the screen wipes, and the
+         iris closes onto the pipe itself. */
       if (link.classList.contains('pipe-back') && !reducedMotion()) {
         link.classList.add('is-warping');
-        warpTo(href, 240);
+        warpTo(href, { delay: 240, center: centreOf(link) });
         return;
       }
-      warpTo(href);
+      /* Any other warp link closes onto whatever was clicked, so the wipe
+         always starts from something the eye is already looking at. */
+      warpTo(href, { center: centreOf(link) });
     });
   }
 
@@ -175,9 +259,17 @@
     boot();
   }
 
+  /* Middle of an element in viewport coordinates. */
+  function centreOf(el) {
+    if (!el || !el.getBoundingClientRect) return null;
+    var b = el.getBoundingClientRect();
+    return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+  }
+
   window.SITE = {
     sfx: sfx,
     warpTo: warpTo,
-    reducedMotion: reducedMotion
+    reducedMotion: reducedMotion,
+    centreOf: centreOf
   };
 }());

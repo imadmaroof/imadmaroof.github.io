@@ -59,6 +59,31 @@
   var cursor   = 0;    // index into points: where the sprite currently stands
   var selected = 0;    // index into stops
   var entering = false;// the pipe dive / warp has begun; the page is leaving
+
+  /* Pipe-entry timing. The dive is 340ms (hop, hang, sink) and the iris starts
+     closing 40ms before it ends so the two overlap instead of queueing —
+     total 480ms from keypress to navigation. Nothing here delays the START:
+     the hop begins on the same frame as the click or Enter. Kept in sync with
+     the pipe-enter / pipe-exit keyframes in css/style.css. */
+  /* Which pipe the sprite is currently down. Kept separately from the iris
+     hand-off because that is consumed by the project page on arrival, while
+     this has to survive until the player comes back to the map — by the
+     corner pipe, the HUD, or the browser's back button. */
+  var STORE_PIPE = 'pixel-portfolio:inpipe';
+  function rememberPipe(id) {
+    try { sessionStorage.setItem(STORE_PIPE, id); } catch (e) { /* ignore */ }
+  }
+  function takePipe() {
+    try {
+      var v = sessionStorage.getItem(STORE_PIPE);
+      sessionStorage.removeItem(STORE_PIPE);
+      return v;
+    } catch (e) { return null; }
+  }
+
+  var DIVE_MS      = 340;
+  var EMERGE_MS    = 380;
+  var IRIS_OVERLAP = 40;
   var started  = false;// has the player left the start of the path yet?
   var busy     = false;
   var width    = 0;
@@ -148,7 +173,7 @@
   function buildNodes() {
     /* Nodes are rebuilt from scratch on every layout so adding a project is
        genuinely just "add an object to the array". */
-    var old = canvas.querySelectorAll('.node');
+    var old = canvas.querySelectorAll('.node, .pipe-cap');
     for (var k = 0; k < old.length; k++) old[k].remove();
 
     for (var i = 0; i < projects.length; i++) {
@@ -183,6 +208,24 @@
 
       canvas.appendChild(el);
       stops[i].el = el;
+
+      /* The front half of the pipe: a copy of the rim, pinned over the real
+         one but outside the node, so it can be painted ABOVE the sprite.
+         This is what the sprite sinks behind when it enters. Measured from
+         the live element rather than hard-coded, so it stays correct if the
+         pipe is ever restyled. */
+      if (!p.locked) {
+        var pipe = el.querySelector('.pipe');
+        var rim  = el.querySelector('.pipe__rim');
+        var cap  = document.createElement('span');
+        cap.className = 'pipe pipe-cap';
+        cap.setAttribute('aria-hidden', 'true');
+        cap.innerHTML = '<span class="pipe__rim"><span class="pipe__mouth"></span></span>';
+        cap.style.left = pt.x + 'px';
+        cap.style.top  = (pt.y - (pipe.offsetHeight - rim.offsetHeight)) + 'px';
+        canvas.appendChild(cap);
+        stops[i].cap = cap;
+      }
     }
   }
 
@@ -439,7 +482,10 @@
     /* Castle at the end of the road -> contact page. */
     if (stop.kind === 'castle') {
       selected = i; started = true; paintSelection();
-      walkTo(i, function () { entering = true; SITE.warpTo('pages/contact.html'); });
+      walkTo(i, function () {
+        entering = true;
+        SITE.warpTo('pages/contact.html', { center: SITE.centreOf(castleEl) });
+      });
       return;
     }
 
@@ -460,13 +506,23 @@
         return;
       }
 
+      rememberPipe(p.id);
+
       if (SITE.reducedMotion()) { entering = true; window.location.href = p.page; return; }
 
       entering = true;
       busy = true;
       player.classList.remove('is-idle');
       player.classList.add('is-entering');
-      window.setTimeout(function () { SITE.warpTo(p.page); }, 360);
+      stop.el.classList.add('is-diving');
+
+      /* The iris collapses onto the mouth of this pipe, and starts while the
+         sprite is still sinking so the two read as one move rather than an
+         animation followed by a transition. */
+      var mouth = SITE.centreOf(stop.el.querySelector('.pipe__rim'));
+      window.setTimeout(function () {
+        SITE.warpTo(p.page, { center: mouth });
+      }, DIVE_MS - IRIS_OVERLAP);
     });
   }
 
@@ -634,16 +690,52 @@
     if (hash) {
       for (var i = 0; i < projects.length; i++) {
         if ('world-' + projects[i].id === hash) {
-          selected = i;
-          started = true;
-          cursor = stops[i].point;
-          placeSprite(points[cursor]);
-          paintSelection();
-          centreOn(points[cursor].x, true);
+          standAt(i);
           break;
         }
       }
     }
+
+    /* Came back from a project page? Climb out of the pipe you went down,
+       which is the entry animation played backwards. */
+    var fromPipe = takePipe();
+    if (fromPipe) {
+      for (var j = 0; j < projects.length; j++) {
+        if (projects[j].id === fromPipe) {
+          standAt(j);
+          if (!SITE.reducedMotion()) emerge(j);
+          break;
+        }
+      }
+    }
+  }
+
+  /* Put the sprite on a stop with no walking. */
+  function standAt(i) {
+    selected = i;
+    started  = true;
+    cursor   = stops[i].point;
+    aim      = cursor;
+    pos      = { x: points[cursor].x, y: points[cursor].y };
+    placeSprite(points[cursor]);
+    paintSelection();
+    centreOn(points[cursor].x, true);
+  }
+
+  /* Rise up out of the pipe. The sprite begins collapsed inside the mouth,
+     hidden by that pipe's cap, and grows back to full height — the same
+     occlusion as going in, in reverse: head first, feet last. */
+  function emerge(i) {
+    busy = true;
+    player.classList.remove('is-idle');
+    player.classList.add('is-exiting');
+    stops[i].el.classList.add('is-rising');
+    window.setTimeout(function () {
+      player.classList.remove('is-exiting');
+      player.classList.add('is-idle');
+      stops[i].el.classList.remove('is-rising');
+      busy = false;
+    }, EMERGE_MS);
   }
 
   if (document.readyState === 'loading') {
