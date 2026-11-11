@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<title>WORLD 1-1 &mdash; WindMesh &mdash; Imad Aboo</title>
+<meta name="description" content="WindMesh: a wildfire spread prediction model that takes in live wind data. 2nd place at LexHack &#x27;26.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%235c94fc'/%3E%3Crect x='2' y='3' width='12' height='11' fill='%23241c2c'/%3E%3Crect x='3' y='4' width='10' height='9' fill='%2339c5bb'/%3E%3Crect x='5' y='7' width='2' height='3' fill='%23fff'/%3E%3Crect x='9' y='7' width='2' height='3' fill='%23fff'/%3E%3C/svg%3E">
+</head>
+
+<body class="page">
+
+<!-- ---- HUD (identical on every page) ---------------------------------- -->
+<header class="hud">
+  <a class="hud__name" href="../index.html" data-warp>IMAD <span>ABOO</span></a>
+
+
+  <span class="hud__spacer"></span>
+
+  <nav class="hud__nav" aria-label="Main">
+    <a href="../index.html" data-warp>MAP</a>
+    <a class="hud__key" href="../pages/all-projects.html">LIST<span class="hud__wide"> VIEW</span></a>
+    <a class="hud__key" href="/resume.pdf">RESUME</a>
+    <a href="../pages/about.html" data-warp>ABOUT</a>
+    <a href="../pages/contact.html" data-warp>CONTACT</a>
+    <button type="button" class="hud__toggle" data-sound-toggle aria-pressed="false">SFX OFF</button>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <div class="level-banner">
+    <span class="level-banner__world">WORLD 1-1</span>
+    <h1 class="level-banner__title">WINDMESH</h1>
+    <p class="level-banner__blurb">Wildfire Spread Prediction Model inputting Live Data</p>
+    <div class="level-banner__rule" aria-hidden="true"></div>
+  </div>
+
+  <div class="stack">
+
+    <section class="panel panel--riveted" aria-labelledby="s-media">
+      <span class="panel__label" id="s-media">DEMO</span>
+      <video class="world-media" src="media/windmesh.mp4" poster="media/windmesh-poster.jpg" controls muted loop playsinline preload="metadata"></video>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-overview">
+      <span class="panel__label" id="s-overview">OVERVIEW</span>
+      <p>Sudden changes in wind speed and direction make wildfires spread in erratic, hard-to-predict ways. WindMesh gives firefighters a simulation that follows the wind as it changes, built on the Rothermel surface fire spread model behind fire management systems worldwide.</p>
+      <p>Our team of four built it at LexHack &rsquo;26 with no hackathon experience, and it took 2nd place.</p>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-goal">
+      <span class="panel__label" id="s-goal">THE GOAL</span>
+      <p>Predict fire spread accurately on a satellite map using nodes, even in chaotic weather, with real wind data from one theoretical node changing how the fire spreads.</p>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-built">
+      <span class="panel__label" id="s-built">WHAT I BUILT</span>
+      <ul class="coin-list">
+        <li>Led the 4-person team.</li>
+        <li>Designed the hardware: a DIY anemometer to measure the wind.</li>
+        <li>Wrote the Python that feeds live anemometer data into the simulation.</li>
+        <li>Made the summary video and trained the team for the presentation.</li>
+      </ul>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-challenge">
+      <span class="panel__label" id="s-challenge">THE CHALLENGE</span>
+      <p>This was my first time designing something technical from scratch, working out each piece by intuition, and with limited resources to build it from.</p>
+      <p>I had barely used Python before. I learned to use Claude to fill the gaps in my code while making sure every part still followed exactly the logic I had planned.</p>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-skills">
+      <span class="panel__label" id="s-skills">SKILLS LEARNT</span>
+      <ul class="chips">
+        <li class="chip">Hardware design process</li>
+        <li class="chip">Professional pitch</li>
+        <li class="chip">Python</li>
+        <li class="chip">GitHub + Git</li>
+      </ul>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-tech">
+      <span class="panel__label" id="s-tech">TECH STACK</span>
+      <ul class="chips">
+        <li class="chip">Python</li>
+        <li class="chip">OpenCV</li>
+        <li class="chip">Rothermel model</li>
+        <li class="chip">Vector calculus</li>
+        <li class="chip">DIY anemometer</li>
+      </ul>
+    </section>
+
+    <section class="scorecard" aria-labelledby="s-results">
+      <h2 class="scorecard__head" id="s-results">&#9733; LEVEL COMPLETE &#9733;</h2>
+      <div class="scorecard__rows">
+        <p class="score-row">
+          <span class="score-row__label">PLACE</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">2ND</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">EVENT</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">LEXHACK &rsquo;26</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">SENSOR</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">DIY ANEMOMETER</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">TEAM</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">4</span>
+        </p>
+      </div>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-links">
+      <span class="panel__label" id="s-links">LINKS</span>
+      <div class="link-row">
+        <a class="btn btn--green" href="https://github.com/ishaan-j/Windmesh" rel="noopener">REPO &gt;&gt;</a>
+      </div>
+    </section>
+
+  </div>
+
+  <p class="site-foot">
+    <a href="../index.html" data-warp>&lt;&lt; BACK TO THE OVERWORLD</a>
+  </p>
+</main>
+
+<!-- ---- corner pipe: back to the map, with a reverse pipe transition ---- -->
+<a class="pipe-back" href="../index.html" data-warp aria-label="Back to the overworld map">
+  <span class="pipe-back__label">MAP</span>
+  <span class="pipe" aria-hidden="true">
+    <span class="pipe__rim"><span class="pipe__mouth"></span></span>
+    <span class="pipe__body"></span>
+  </span>
+</a>
+
+<script src="../js/site.js"></script>
+</body>
+</html>

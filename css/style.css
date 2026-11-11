@@ -924,22 +924,6 @@ p:last-child { margin-bottom: 0; }
   overflow: hidden;
 }
 
-.preview__chips {
-  display: flex; flex-wrap: wrap; gap: 5px;
-  list-style: none; margin: 8px 0 0; padding: 0;
-}
-.preview__chips li {
-  font-family: var(--font-pixel);
-  font-size: 6px;
-  line-height: 1;
-  padding: 5px 6px;
-  background: var(--water);
-  color: var(--ink);
-  border: 2px solid var(--ink);
-}
-.preview__chips li:nth-child(3n+2) { background: var(--gold); }
-.preview__chips li:nth-child(3n+3) { background: var(--grass-hi); }
-
 .preview__cta {
   margin: 8px 0 0;
   font-family: var(--font-pixel);
@@ -979,7 +963,6 @@ p:last-child { margin-bottom: 0; }
 
 /* Short windows: the same card without the chips and with a two-line
    abstract, so it can still sit above the world instead of beside it. */
-.preview--compact .preview__chips { display: none; }
 .preview--compact .preview__abstract { -webkit-line-clamp: 2; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1072,8 +1055,7 @@ p:last-child { margin-bottom: 0; }
 /* --- 6o. the chest screen (js/chest.js) -----------------------------------
    A reward summary, all at once: the chest drops in, the lid pops open at
    260ms with a burst of light, and every skill tile comes out of the chest
-   into place with a 50ms stagger, each new level pip flashing in. With five
-   skills everything is on screen by about 800ms.
+   into place with a 50ms stagger. With five skills everything is on screen by about 800ms.
    -------------------------------------------------------------------------- */
 .chest-screen {
   position: fixed;
@@ -1178,30 +1160,10 @@ p:last-child { margin-bottom: 0; }
 /* tiles come up out of the chest and land in place */
 @keyframes loot-pop { from { opacity: 0; transform: translateY(-46px) scale(.35); } }
 
-.loot__icon { grid-row: 1 / span 3; align-self: start; width: 30px; height: 30px; }
+.loot__icon { grid-row: 1 / span 2; align-self: start; width: 30px; height: 30px; }
 .loot__icon svg { display: block; width: 100%; height: 100%; }
-.loot__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .loot__name { font-family: var(--font-pixel); font-size: 9px; line-height: 1.4; color: var(--text); }
-.loot__gain { font-family: var(--font-pixel); font-size: 10px; color: var(--pipe-lo); }
-.loot__level { font-family: var(--font-pixel); font-size: 7px; color: var(--text-soft); }
-.loot__bar { display: flex; gap: 3px; }
-.pip {
-  width: 14px; height: 8px;
-  background: var(--panel-lo);
-  border: 2px solid var(--ink);
-}
-.pip.is-had { background: var(--water); }
-.pip.is-new {
-  background: var(--gold);
-  animation: pip-fill 200ms steps(2, end) backwards;
-  animation-delay: calc(500ms + var(--i) * 50ms + var(--p) * 70ms);
-}
-@keyframes pip-fill {
-  from { background: var(--panel-lo); }
-  50%  { background: var(--panel-hi); }
-}
 .loot__detail {
-  grid-column: 1 / -1;
   font-size: 12px;
   line-height: 1.45;
   color: var(--text-soft);
@@ -1994,4 +1956,15 @@ p:last-child { margin-bottom: 0; }
   .intro__choice--play.is-current .fr-idle { opacity: 1; }
   .intro__choice--play.is-current .fr-walk1,
   .intro__choice--play.is-current .fr-walk2 { animation: none; }
+}
+
+/* --------------------------------------------------------------------------
+   18. PROJECT MEDIA (a demo video or picture on a world page)
+   -------------------------------------------------------------------------- */
+.world-media {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--ink);
+  border: var(--bevel) solid var(--ink);
 }

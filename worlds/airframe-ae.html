@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<title>WORLD 1-2 &mdash; Airframe AE &mdash; Imad Aboo</title>
+<meta name="description" content="Airframe AE: real-time impact detection for aircraft panels, using acoustic emission.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%235c94fc'/%3E%3Crect x='2' y='3' width='12' height='11' fill='%23241c2c'/%3E%3Crect x='3' y='4' width='10' height='9' fill='%2339c5bb'/%3E%3Crect x='5' y='7' width='2' height='3' fill='%23fff'/%3E%3Crect x='9' y='7' width='2' height='3' fill='%23fff'/%3E%3C/svg%3E">
+</head>
+
+<body class="page">
+
+<!-- ---- HUD (identical on every page) ---------------------------------- -->
+<header class="hud">
+  <a class="hud__name" href="../index.html" data-warp>IMAD <span>ABOO</span></a>
+
+
+  <span class="hud__spacer"></span>
+
+  <nav class="hud__nav" aria-label="Main">
+    <a href="../index.html" data-warp>MAP</a>
+    <a class="hud__key" href="../pages/all-projects.html">LIST<span class="hud__wide"> VIEW</span></a>
+    <a class="hud__key" href="/resume.pdf">RESUME</a>
+    <a href="../pages/about.html" data-warp>ABOUT</a>
+    <a href="../pages/contact.html" data-warp>CONTACT</a>
+    <button type="button" class="hud__toggle" data-sound-toggle aria-pressed="false">SFX OFF</button>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <div class="level-banner">
+    <span class="level-banner__world">WORLD 1-2</span>
+    <h1 class="level-banner__title">AIRFRAME AE</h1>
+    <p class="level-banner__blurb">Real-time impact detection for aircraft panels, using acoustic emission.</p>
+    <div class="level-banner__rule" aria-hidden="true"></div>
+  </div>
+
+  <div class="stack">
+
+    <section class="panel panel--riveted" aria-labelledby="s-media">
+      <span class="panel__label" id="s-media">DEMO</span>
+      <video class="world-media" src="media/airframe-ae.mp4" poster="media/airframe-ae-poster.jpg" controls muted loop playsinline preload="metadata"></video>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-overview">
+      <span class="panel__label" id="s-overview">OVERVIEW</span>
+      <p>Airplanes are only checked for structural damage on the ground, every 100 to 1,000 flight hours. In between, small cracks that look harmless can quickly spread into major damage that is far more expensive and time-consuming to repair. Airframe AE catches them early.</p>
+      <p>It uses acoustic emission: the stress waves a structure gives off when it is struck or starts to crack. The system isolates the frequencies those waves produce, so not every little noise is read as a crack, then compares the signal across the sensor array to locate the impact and flag it on a live aircraft diagram, highlighting high-risk zones such as wing roots and door frames.</p>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-goal">
+      <span class="panel__label" id="s-goal">THE GOAL</span>
+      <p>Have the microphones detect a tap that is neither too hard nor too soft, using frequency isolation, and show it live on the simulation.</p>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-built">
+      <span class="panel__label" id="s-built">WHAT I BUILT</span>
+      <ul class="coin-list">
+        <li>Wired the piezoelectric microphones to the Arduino Uno Q.</li>
+        <li>Wrote the Python link between the sensor array and the visualization.</li>
+        <li>Worked on the localization software that triangulates each impact.</li>
+      </ul>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-challenge">
+      <span class="panel__label" id="s-challenge">THE CHALLENGE</span>
+      <p>I had to learn how the electronics worked, and how to wire them properly, under time pressure, so everything could be assembled correctly as soon as the parts arrived.</p>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-skills">
+      <span class="panel__label" id="s-skills">SKILLS LEARNT</span>
+      <ul class="chips">
+        <li class="chip">Hands-on electronics: wiring sensors to a microcontroller</li>
+        <li class="chip">Building with Claude Code</li>
+      </ul>
+    </section>
+
+    <section class="panel panel--riveted" aria-labelledby="s-tech">
+      <span class="panel__label" id="s-tech">TECH STACK</span>
+      <ul class="chips">
+        <li class="chip">Python</li>
+        <li class="chip">Arduino Uno Q</li>
+        <li class="chip">MAX4466 piezo mics</li>
+        <li class="chip">Acoustic emission</li>
+      </ul>
+    </section>
+
+    <section class="scorecard" aria-labelledby="s-results">
+      <h2 class="scorecard__head" id="s-results">&#9733; LEVEL COMPLETE &#9733;</h2>
+      <div class="scorecard__rows">
+        <p class="score-row">
+          <span class="score-row__label">OUTPUT</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">LIVE IMPACT MAP</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">BOARD</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">ARDUINO UNO Q</span>
+        </p>
+        <p class="score-row">
+          <span class="score-row__label">SENSORS</span>
+          <span class="score-row__dots" aria-hidden="true"></span>
+          <span class="score-row__value">PIEZOELECTRIC MICS</span>
+        </p>
+      </div>
+    </section>
+
+  </div>
+
+  <p class="site-foot">
+    <a href="../index.html" data-warp>&lt;&lt; BACK TO THE OVERWORLD</a>
+  </p>
+</main>
+
+<!-- ---- corner pipe: back to the map, with a reverse pipe transition ---- -->
+<a class="pipe-back" href="../index.html" data-warp aria-label="Back to the overworld map">
+  <span class="pipe-back__label">MAP</span>
+  <span class="pipe" aria-hidden="true">
+    <span class="pipe__rim"><span class="pipe__mouth"></span></span>
+    <span class="pipe__body"></span>
+  </span>
+</a>
+
+<script src="../js/site.js"></script>
+</body>
+</html>

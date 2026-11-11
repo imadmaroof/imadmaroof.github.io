@@ -2,8 +2,8 @@
    CHEST — the reward screen a ? block opens
    --------------------------------------------------------------------------
    A quick reveal rather than a cutscene: the chest drops in, the lid pops
-   open, and every skill comes out of it at once, each with its level and a
-   short line on what it covers. All of it is on screen in under a second.
+   open, and every skill comes out of it at once, each with a short line on
+   what it covers. All of it is on screen in under a second.
    The timing lives in the CSS (section 6o); this file builds the markup and
    handles closing.
 
@@ -30,44 +30,19 @@
       .replace(/"/g, '&quot;');
   }
 
-  /* The level bar: pips already earned, pips this chest adds (they flash in),
-     and the empty rest. Every bar in every chest has the same length, so
-     levels compare at a glance. */
-  function pips(before, after, length) {
-    var out = '';
-    for (var i = 0; i < length; i++) {
-      var cls = i < before ? 'pip is-had' : (i < after ? 'pip is-new' : 'pip');
-      out += '<i class="' + cls + '" style="--p:' + Math.max(0, i - before) + '"></i>';
-    }
-    return out;
-  }
-
-  function levelText(s) {
-    return s.before === 0 ? 'NEW SKILL' : 'LV ' + s.before + ' &gt;&gt; LV ' + s.after;
-  }
-
   function summary(loot) {
-    var fresh = 0, up = 0;
-    for (var i = 0; i < loot.length; i++) {
-      if (loot[i].before === 0) fresh++; else up++;
-    }
-    var parts = [];
-    if (fresh) parts.push(fresh + ' NEW');
-    if (up) parts.push(up + ' LEVELED UP');
-    return parts.join(' &middot; ');
+    return loot.length + (loot.length === 1 ? ' SKILL' : ' SKILLS') + ' UNLOCKED';
   }
 
   /**
    * Open the reward screen.
    *   opts.title     chest heading, e.g. 'STARTING KIT'
-   *   opts.loot      [{ name, gain, before, after, detail, icon }]
-   *   opts.barLength number of pips in every level bar
+   *   opts.loot      [{ name, detail, icon }]
    *   opts.onClose   called once the screen is gone
    */
   function open(opts) {
     if (root) remove();
     var loot = opts.loot || [];
-    var bar  = Math.max(5, opts.barLength || 0);
     lastFocus = document.activeElement;
     onClose = opts.onClose || null;
 
@@ -77,12 +52,7 @@
       tiles +=
         '<li class="loot" style="--i:' + i + '">' +
           '<span class="loot__icon" aria-hidden="true">' + window.PIXEL.icon(s) + '</span>' +
-          '<span class="loot__head">' +
-            '<span class="loot__name">' + esc(s.name) + '</span>' +
-            '<span class="loot__gain" aria-label="plus ' + s.gain + '">+' + s.gain + '</span>' +
-          '</span>' +
-          '<span class="loot__level">' + levelText(s) + '</span>' +
-          '<span class="loot__bar" aria-hidden="true">' + pips(s.before, s.after, bar) + '</span>' +
+          '<span class="loot__name">' + esc(s.name) + '</span>' +
           (s.detail ? '<span class="loot__detail">' + esc(s.detail) + '</span>' : '') +
         '</li>';
     }
