@@ -16,7 +16,7 @@ const PROJECTS = [
       { label: 'REPO', href: 'https://github.com/ishaan-j/Windmesh' }
     ],
     abstract: 'Software that predicts where and how a wildfire will spread, using the Rothermel surface fire spread model behind fire management systems worldwide. DIY anemometers feed live wind speed and direction into the simulation, so it stays accurate when the wind shifts suddenly.',
-    media:    ''
+    media:    'worlds/media/windmesh.mp4'
   },
 
   /* ---- WORLD 1-2 -------------------------------------------------------- */
