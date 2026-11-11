@@ -52,8 +52,8 @@ const PROJECTS = [
    `world` label ('2-1' is World 2). Each world here gets a name and a look:
    theme is 'grassland' or 'coast'. */
 const WORLDS = [
-  { number: 1, name: 'GRASSLANDS',   theme: 'grassland' },
-  { number: 2, name: 'SUNSET COAST', theme: 'coast' }
+  { number: 1, name: "SUMMER '26",           theme: 'grassland' },
+  { number: 2, name: "FRESHMAN YEAR '26-27", theme: 'coast' }
 ];
 
 /* Power-ups: a ? block on the path that opens a chest of skills. `after` is
