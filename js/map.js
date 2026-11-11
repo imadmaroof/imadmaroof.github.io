@@ -73,7 +73,6 @@
   var points   = [];   // every corner of the path, in order
   var stops    = [];   // the places you can stand: the start, worlds, ? blocks, the castle
   var worldStop = [];  // project index -> its index in stops
-  var lootBar  = 5;    // length of every level bar in every chest
   var opened   = {};   // ? blocks hit this visit, by their `after` key
   var hitting  = false;// mid-jump at a ? block
   var coinEls  = [];   // {x, y, el, taken}
@@ -196,13 +195,8 @@
     tallyLoot();
   }
 
-  /* Work out every chest's contents in the order you meet them on the path.
-     A skill that turns up in several chests levels up each time, so the
-     second CAD chest shows CAD going from level 1 to 2. Every bar uses the
-     same length (the highest level any skill reaches) so they compare. */
+  /* Each chest's contents, ready for the reward screen. */
   function tallyLoot() {
-    var totals = {};
-    lootBar = 5;
     for (var i = 0; i < stops.length; i++) {
       var pu = stops[i].powerup;
       if (!pu) continue;
@@ -210,14 +204,9 @@
       var skills = pu.skills || [];
       for (var k = 0; k < skills.length; k++) {
         var sk = skills[k] || {};
-        var key = String(sk.name || '').trim().toUpperCase();
-        if (!key) continue;
-        var gain = Math.max(1, Math.round(sk.gain || 1));
-        var before = totals[key] || 0;
-        totals[key] = before + gain;
-        lootBar = Math.max(lootBar, totals[key]);
-        loot.push({ name: key, gain: gain, before: before, after: before + gain,
-                    detail: sk.detail || '', icon: sk.icon || '' });
+        var name = String(sk.name || '').trim().toUpperCase();
+        if (!name) continue;
+        loot.push({ name: name, detail: sk.detail || '', icon: sk.icon || '' });
       }
       stops[i].loot = loot;
     }
@@ -922,10 +911,6 @@
 
   function renderPreview(p) {
     var el   = previewLayer();
-    var tech = (p.tech || []).slice(0, 3);
-    var chips = '';
-    for (var t = 0; t < tech.length; t++) chips += '<li>' + esc(tech[t]) + '</li>';
-
     el.classList.toggle('preview--locked', !!p.locked);
     el.innerHTML =
       '<div class="preview__card">' +
@@ -935,7 +920,6 @@
         '</div>' +
         '<div class="preview__media">' + previewMedia(p) + '</div>' +
         '<p class="preview__abstract">' + esc(p.abstract || p.blurb || '') + '</p>' +
-        (chips ? '<ul class="preview__chips">' + chips + '</ul>' : '') +
         '<p class="preview__cta">' +
           (p.locked ? 'NOT PUBLISHED YET' : 'ENTER &gt;&gt; PLAY LEVEL') +
         '</p>' +
@@ -952,7 +936,7 @@
        2. above the pipe, over the node's OWN sign — that sign only repeats
           the world and title already in the card's banner, so nothing is
           lost (short windows, e.g. an iPad in landscape, land here);
-       3. either of those again with a compact card (no chips, two-line
+       3. either of those again with a compact card (two-line
           abstract) when the full one is a few pixels too tall;
        4. beside the node — last resort. Pipes are 300px apart, so this
           always lands on the neighbouring sign. */
@@ -1059,7 +1043,6 @@
       window.CHEST.open({
         title: stop.powerup.title,
         loot: stop.loot || [],
-        barLength: lootBar,
         onClose: function () { updatePreview(); }
       });
     }

@@ -3,152 +3,68 @@
 
 const PROJECTS = [
 
-  /* ---- WORLD 1 ---------------------------------------------------------- */
+  /* ---- WORLD 1-1 -------------------------------------------------------- */
   {
-    id:     'world-1',
+    id:     'windmesh',
     world:  '1-1',
-    title:  'PROJECT TITLE',
-    blurb:  'Placeholder blurb. One sentence about what this project is and why it exists.',
-    page:   'worlds/world-template.html',
+    title:  'WINDMESH',
+    blurb:  'Wildfire Spread Prediction Model inputting Live Data',
+    page:   'worlds/windmesh.html',
     locked: false,
-    tech:   ['PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER'],
+    tech:   ['Python', 'OpenCV', 'Rothermel model', 'Vector calculus', 'DIY anemometer'],
     links:  [
-      { label: 'REPO',      href: '#' },
-      { label: 'LIVE DEMO', href: '#' }
+      { label: 'REPO', href: 'https://github.com/ishaan-j/Windmesh' }
     ],
-    abstract: 'Placeholder abstract. Two or three sentences on what this project does and the one result worth knowing about. Shown in the preview card on the map.',
+    abstract: 'Software that predicts where and how a wildfire will spread, using the Rothermel surface fire spread model behind fire management systems worldwide. DIY anemometers feed live wind speed and direction into the simulation, so it stays accurate when the wind shifts suddenly.',
     media:    ''
   },
 
-  /* ---- WORLD 2 ---------------------------------------------------------- */
+  /* ---- WORLD 1-2 -------------------------------------------------------- */
   {
-    id:     'world-2',
+    id:     'airframe-ae',
     world:  '1-2',
-    title:  'PROJECT TITLE',
-    blurb:  'Placeholder blurb. Swap this out for a real one-line summary later.',
-    page:   'worlds/world-template.html',
+    title:  'AIRFRAME AE',
+    blurb:  'Real-time impact detection for aircraft panels, using acoustic emission.',
+    page:   'worlds/airframe-ae.html',
     locked: false,
-    tech:   ['PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER'],
-    links:  [
-      { label: 'REPO',      href: '#' },
-      { label: 'LIVE DEMO', href: '#' }
-    ],
-    abstract: 'Placeholder abstract. Two or three sentences on what this project does and the one result worth knowing about. Shown in the preview card on the map.',
-    media:    ''
-  },
-
-  /* ---- WORLD 3 ---------------------------------------------------------- */
-  {
-    id:     'world-3',
-    world:  '1-3',
-    title:  'PROJECT TITLE',
-    blurb:  'Placeholder blurb. Filler text standing in for a real description.',
-    page:   'worlds/world-template.html',
-    locked: false,
-    tech:   ['PLACEHOLDER', 'PLACEHOLDER', 'PLACEHOLDER'],
-    links:  [
-      { label: 'REPO',      href: '#' },
-      { label: 'LIVE DEMO', href: '#' }
-    ],
-    abstract: 'Placeholder abstract. Two or three sentences on what this project does and the one result worth knowing about. Shown in the preview card on the map.',
-    media:    ''
-  },
-
-  /* ---- WORLD 4 — locked example ----------------------------------------- */
-  {
-    id:     'world-4',
-    world:  '2-1',
-    title:  'COMING SOON',
-    blurb:  'Placeholder blurb for a project that is not published yet.',
-    page:   '',
-    locked: true,
-    tech:   ['PLACEHOLDER', 'PLACEHOLDER'],
-    links:  []
-  },
-
-  /* ---- WORLD 5 — locked example ----------------------------------------- */
-  {
-    id:     'world-5',
-    world:  '2-2',
-    title:  'COMING SOON',
-    blurb:  'Placeholder blurb for a project that is not published yet.',
-    page:   '',
-    locked: true,
-    tech:   ['PLACEHOLDER', 'PLACEHOLDER'],
-    links:  []
-  },
-
-  /* ---- WORLD 6 — locked example ----------------------------------------- */
-  {
-    id:     'world-6',
-    world:  '2-3',
-    title:  'COMING SOON',
-    blurb:  'Placeholder blurb for a project that is not published yet.',
-    page:   '',
-    locked: true,
-    tech:   ['PLACEHOLDER', 'PLACEHOLDER'],
-    links:  []
+    tech:   ['Python', 'Arduino Uno Q', 'MAX4466 piezo mics', 'Acoustic emission'],
+    links:  [],
+    abstract: 'Aircraft are only checked for structural damage on the ground, every 100 to 1,000 flight hours. Airframe AE listens for impacts as they happen: piezoelectric microphones on the panel pick up the stress waves, and the system locates each hit on a live aircraft diagram.',
+    media:    'worlds/media/airframe-ae.mp4'
   }
 
 ];
 
 /* Power-ups: a ? block on the path that opens a chest of skills. `after` is
-   'start' or the id of the world it follows. A skill that appears in more
-   than one chest levels up. */
+   'start' or the id of the project it follows. */
 const POWERUPS = [
 
   {
     after:  'start',
     title:  'STARTING KIT',
     skills: [
-      { name: 'CODING',      gain: 1, detail: 'Placeholder: one line on where this started.' },
-      { name: 'ELECTRONICS', gain: 1, detail: 'Placeholder: one line on where this started.' }
+      { name: 'CODING',           detail: 'Python, building a pneumonia classifier from chest X-rays at Inspirit AI.' },
+      { name: 'MACHINE LEARNING', detail: 'Trained a CNN in TensorFlow and Keras to 92% accuracy.' }
     ]
   },
 
   {
-    after:  'world-1',
-    title:  'WORLD 1-1 LOOT',
+    after:  'windmesh',
+    title:  'WINDMESH LOOT',
     skills: [
-      { name: 'CAD',         gain: 1, detail: 'Placeholder: what this project taught you.' },
-      { name: '3D PRINTING', gain: 1, detail: 'Placeholder: what this project taught you.' },
-      { name: 'CODING',      gain: 1, detail: 'Placeholder: what this project taught you.' }
+      { name: 'MORE ADVANCED CODING',     icon: 'code', detail: 'Fed live sensor data into a fire-spread simulation in Python.' },
+      { name: 'INTRO TO HARDWARE DESIGN', icon: 'cad',  detail: 'Designed a DIY anemometer from scratch with limited parts.' },
+      { name: 'PROFESSIONAL PITCH',                     detail: 'Made the demo video and trained the team to present. 2nd place.' }
     ]
   },
 
   {
-    after:  'world-2',
-    title:  'WORLD 1-2 LOOT',
+    after:  'airframe-ae',
+    title:  'AIRFRAME AE LOOT',
     skills: [
-      { name: 'SOLDERING',   gain: 1, detail: 'Placeholder: what this project taught you.' },
-      { name: 'ELECTRONICS', gain: 1, detail: 'Placeholder: what this project taught you.' }
-    ]
-  },
-
-  {
-    after:  'world-3',
-    title:  'WORLD 1-3 LOOT',
-    skills: [
-      { name: 'CAD',         gain: 1, detail: 'Placeholder: what this project taught you.' },
-      { name: 'CODING',      gain: 1, detail: 'Placeholder: what this project taught you.' }
-    ]
-  },
-
-  {
-    after:  'world-4',
-    title:  'WORLD 2-1 LOOT',
-    skills: [
-      { name: '3D PRINTING', gain: 1, detail: 'Placeholder: what this project taught you.' },
-      { name: 'SOLDERING',   gain: 1, detail: 'Placeholder: what this project taught you.' }
-    ]
-  },
-
-  {
-    after:  'world-5',
-    title:  'WORLD 2-2 LOOT',
-    skills: [
-      { name: 'ELECTRONICS', gain: 1, detail: 'Placeholder: what this project taught you.' },
-      { name: 'CODING',      gain: 1, detail: 'Placeholder: what this project taught you.' }
+      { name: 'ELECTRONICS',        icon: 'chip', detail: 'Wired piezoelectric microphones to an Arduino Uno Q.' },
+      { name: 'SIGNAL PROCESSING',  icon: 'chip', detail: 'Isolated impact frequencies so ordinary noise is not read as a hit.' },
+      { name: 'AI-ASSISTED CODING', icon: 'code', detail: 'Built faster with Claude Code while keeping the logic my own.' }
     ]
   }
 
