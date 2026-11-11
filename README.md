@@ -11,10 +11,14 @@ castle at the end is how to get in touch.
 
 ## Getting around
 
+When you arrive you pick a mode: **ADVENTURE** (the map) or **LIST VIEW**
+(every project on one plain page, no game). You can switch any time from the
+top bar.
+
 - **Left / right arrows** or **click** to walk along the path
 - **Up** under a **?** block to jump and hit it
 - **Enter** to go down a pipe
-- **LIST VIEW** in the top bar shows every project on one plain page, no game
+- **LIST VIEW** in the top bar switches to the plain list
 - **RESUME** in the top bar opens my resume
 - On a phone, the map turns into a simple scrollable list
 

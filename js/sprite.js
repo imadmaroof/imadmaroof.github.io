@@ -40,8 +40,9 @@
    own body, so a change to the face or hat only has to be made once. `hit`
    is drawn whole, because the raised arm passes in front of the head.
 
-   Further down the same file: the treasure chest (closed and open) and the
-   small skill icons shown when a ? block is opened.
+   Further down the same file: the treasure chest (closed and open), the
+   small skill icons shown when a ? block is opened, and the page icon on
+   the LIST VIEW card of the mode select.
 
    This is a plain script, not an ES module, for the same reason as
    js/projects.js: the site has to work straight off the filesystem. It
@@ -244,6 +245,10 @@
     chip: [            /* an IC with its legs */
       '.S.S.S.S..', 'KKKKKKKKK.', 'KnnnnnnnK.', 'KnEnnnnnKS', 'KnnnnnnnK.',
       'KnnnnnnnKS', 'KnnnnnnnK.', 'KKKKKKKKK.', '.S.S.S.S..', '..........'
+    ],
+    list: [            /* a page of rows: the LIST VIEW card on arrival */
+      'KKKKKKKKKK', 'KWWWWWWWWK', 'KWGWssssWK', 'KWWWWWWWWK', 'KWGWsssWWK',
+      'KWWWWWWWWK', 'KWGWssssWK', 'KWWWWWWWWK', 'KWGWssWWWK', 'KKKKKKKKKK'
     ],
     star: [            /* everything else */
       '....KK....', '....KGK...', '...KGGK...', 'KKKKGLGKKK', '.KGGLLGGK.',

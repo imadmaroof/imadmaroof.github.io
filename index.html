@@ -12,6 +12,22 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+
+<!-- Mode select (ADVENTURE or LIST VIEW). Decided here, before the first
+     paint, so the map never flashes up first; js/intro.js does the rest.
+     Shown only on a fresh arrival at the map, on screens 768px and wider. -->
+<script>
+(function () {
+  try {
+    if (location.hash) return;                                   /* a link straight to a project */
+    if (!window.matchMedia('(min-width: 768px)').matches) return; /* phones already get a list */
+    if (sessionStorage.getItem('pixel-portfolio:mode') === 'map') return;   /* map already chosen */
+    if (sessionStorage.getItem('pixel-portfolio:inpipe')) return;           /* climbing out of a pipe */
+    if (document.referrer && new URL(document.referrer).origin === location.origin) return; /* already on the site */
+    document.documentElement.classList.add('intro-open');
+  } catch (e) { /* no storage: go straight to the map */ }
+}());
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%235c94fc'/%3E%3Crect x='2' y='3' width='12' height='11' fill='%23241c2c'/%3E%3Crect x='3' y='4' width='10' height='9' fill='%2339c5bb'/%3E%3Crect x='5' y='7' width='2' height='3' fill='%23fff'/%3E%3Crect x='9' y='7' width='2' height='3' fill='%23fff'/%3E%3C/svg%3E">
 </head>
 
@@ -35,6 +51,32 @@
     <button type="button" class="hud__toggle" data-sound-toggle aria-pressed="false">SFX OFF</button>
   </nav>
 </header>
+
+<!-- ======================================================================
+     MODE SELECT — shown on arrival; see the <head> script and js/intro.js.
+     EDIT: the wording on the two cards.
+     ====================================================================== -->
+<div id="intro" class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+  <div class="intro__inner">
+    <h2 class="intro__title" id="intro-title">PICK A MODE</h2>
+    <p class="intro__sub">Same projects either way, and you can switch any time.</p>
+    <div class="intro__choices">
+      <button type="button" class="intro__choice intro__choice--play" data-intro="play">
+        <span class="intro__cursor" aria-hidden="true"></span>
+        <span class="intro__art" data-intro-art="player" aria-hidden="true"></span>
+        <span class="intro__name">ADVENTURE</span>
+        <span class="intro__desc">Walk the map, dive into pipes and open skill chests.</span>
+      </button>
+      <a class="intro__choice intro__choice--list" href="pages/all-projects.html" data-intro="list">
+        <span class="intro__cursor" aria-hidden="true"></span>
+        <span class="intro__art" data-intro-art="list" aria-hidden="true"></span>
+        <span class="intro__name">LIST VIEW</span>
+        <span class="intro__desc">Every project on one plain page. No game.</span>
+      </a>
+    </div>
+    <p class="intro__keys" aria-hidden="true">ARROWS TO CHOOSE &middot; ENTER TO GO</p>
+  </div>
+</div>
 
 <!-- ======================================================================
      THE OVERWORLD (desktop / tablet, 768px and up)
@@ -159,6 +201,7 @@
 <script src="js/sprite.js"></script>
 <script src="js/site.js"></script>
 <script src="js/chest.js"></script>
+<script src="js/intro.js"></script>
 <script src="js/map.js"></script>
 </body>
 </html>
