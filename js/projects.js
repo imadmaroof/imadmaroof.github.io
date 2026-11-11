@@ -28,7 +28,9 @@ const PROJECTS = [
     page:   'worlds/airframe-ae.html',
     locked: false,
     tech:   ['Python', 'Arduino Uno Q', 'MAX4466 piezo mics', 'Acoustic emission'],
-    links:  [],
+    links:  [
+      { label: 'REPO', href: 'https://github.com/ishaan-j/Airframe-AE-Array' }
+    ],
     abstract: 'Aircraft are only checked for structural damage on the ground, every 100 to 1,000 flight hours. Airframe AE listens for impacts as they happen: piezoelectric microphones on the panel pick up the stress waves, and the system locates each hit on a live aircraft diagram.',
     media:    'worlds/media/airframe-ae.mp4'
   },
