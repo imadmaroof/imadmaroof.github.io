@@ -64,8 +64,8 @@
     <h1 class="level-banner__world">ALL PROJECTS</h1>
     <p class="level-banner__title">EVERY WORLD, ONE PAGE</p>
     <p class="level-banner__blurb">
-      Every project on one page — no map, no animation. Prefer to walk it
-      instead? <a href="../index.html">Open the overworld</a>.
+      Every project on one page, newest first. No map, no animation.
+      Prefer to walk it instead? <a href="../index.html">Open the overworld</a>.
     </p>
     <div class="level-banner__rule" aria-hidden="true"></div>
   </div>
@@ -102,14 +102,17 @@
 
    Note the path fix-up: PROJECTS stores `page` relative to the SITE ROOT
    (index.html lives there), but this file sits in /pages/, so every project
-   link needs one level up. That is the only transformation applied here.
+   link needs one level up.
    -------------------------------------------------------------------------- */
 (function () {
   'use strict';
 
   var list = document.getElementById('plainlist');
-  var projects = window.PROJECTS || [];
   if (!list) return;
+
+  /* PROJECTS runs oldest to newest along the map. Here it is the other way
+     round, newest first, and unpublished placeholders are left out. */
+  var projects = (window.PROJECTS || []).filter(function (p) { return !p.locked; }).reverse();
 
   function esc(str) {
     return String(str == null ? '' : str)

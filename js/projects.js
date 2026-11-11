@@ -31,8 +31,29 @@ const PROJECTS = [
     links:  [],
     abstract: 'Aircraft are only checked for structural damage on the ground, every 100 to 1,000 flight hours. Airframe AE listens for impacts as they happen: piezoelectric microphones on the panel pick up the stress waves, and the system locates each hit on a live aircraft diagram.',
     media:    'worlds/media/airframe-ae.mp4'
+  },
+
+  /* ---- WORLD 2-1 (placeholder until the next project is ready) ---------- */
+  {
+    id:     'world-2-next',
+    world:  '2-1',
+    title:  'COMING SOON',
+    blurb:  'The next project is on its way.',
+    page:   '',
+    locked: true,
+    tech:   [],
+    links:  []
   }
 
+];
+
+/* Worlds group the projects by age: the oldest are in World 1, the newest
+   in the highest world. A project's world is the first number of its
+   `world` label ('2-1' is World 2). Each world here gets a name and a look:
+   theme is 'grassland' or 'coast'. */
+const WORLDS = [
+  { number: 1, name: 'GRASSLANDS',   theme: 'grassland' },
+  { number: 2, name: 'SUNSET COAST', theme: 'coast' }
 ];
 
 /* Power-ups: a ? block on the path that opens a chest of skills. `after` is
@@ -71,4 +92,5 @@ const POWERUPS = [
 ];
 
 window.PROJECTS = PROJECTS;
+window.WORLDS   = WORLDS;
 window.POWERUPS = POWERUPS;

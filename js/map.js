@@ -21,6 +21,7 @@
 
   var projects = window.PROJECTS || [];
   var powerups = window.POWERUPS || [];
+  var worlds   = window.WORLDS   || [];
   var SITE = window.SITE;
 
   /* --- layout constants -------------------------------------------------- */
@@ -29,6 +30,9 @@
   var START_PAD  = 210;   // px from the left edge to world 1
   var CASTLE_GAP = 280;   // px from the last world to the castle
   var END_PAD    = 190;   // px of map after the castle
+  var WORLD_GAP  = 200;   // extra px where one world ends and the next begins
+  var BLEND      = 260;   // px over which one world's scenery fades into the next
+  var FF_SECONDS = 0.8;   // a fast-forward never takes much longer than this
   /* Walking. The sprite eases in from standing, cruises, and brakes into the
      stop, rather than moving at one flat speed. A pipe-to-pipe leg is about
      385-485px of path, which these numbers walk in roughly 0.9-1.1s. */
@@ -75,6 +79,9 @@
   var worldStop = [];  // project index -> its index in stops
   var opened   = {};   // ? blocks hit this visit, by their `after` key
   var hitting  = false;// mid-jump at a ? block
+  var gates    = [];   // where each new world begins: {x, y, world}
+  var boost    = 1;    // walking speed multiplier; above 1 while fast-forwarding
+  var shownWorld = null; // the world the sprite was last seen in
   var coinEls  = [];   // {x, y, el, taken}
   var cursor   = 0;    // index into points: where the sprite currently stands
   var selected = 0;    // index into stops
@@ -141,7 +148,21 @@
      BUILDING THE MAP
      ====================================================================== */
 
-  function nodeX(i)  { return START_PAD + i * NODE_GAP; }
+  /* Which world a project belongs to: the first number of its label. */
+  function worldNum(p) { return parseInt(String(p && p.world || '1'), 10) || 1; }
+  function worldInfo(n) {
+    for (var i = 0; i < worlds.length; i++) if (worlds[i].number === n) return worlds[i];
+    return { number: n, name: '', theme: 'grassland' };
+  }
+
+  /* Pipes are NODE_GAP apart, with WORLD_GAP more wherever a new world starts. */
+  function nodeX(i) {
+    var x = START_PAD + i * NODE_GAP;
+    for (var k = 1; k <= i && k < projects.length; k++) {
+      if (worldNum(projects[k]) !== worldNum(projects[k - 1])) x += WORLD_GAP;
+    }
+    return x;
+  }
   function nodeY(i)  { return Math.round(height * NODE_Y[i % NODE_Y.length]); }
   function castleX() { return nodeX(Math.max(projects.length - 1, 0)) + CASTLE_GAP; }
 
@@ -160,6 +181,7 @@
     points = [];
     stops  = [];
     worldStop = [];
+    gates  = [];
 
     var startY = Math.round(height * TRAIL_Y);
     points.push({ x: START_X, y: startY });
@@ -179,6 +201,12 @@
     for (var i = 0; i < projects.length; i++) {
       var x = nodeX(i), y = nodeY(i);
       if (i > 0) blockOnRun(projects[i - 1].id, x);
+      /* A new world: its gate stands on the path between the last stop of
+         the old world and the first pipe of the new one. */
+      if (i > 0 && worldNum(projects[i]) !== worldNum(projects[i - 1])) {
+        var last = points[points.length - 1];
+        gates.push({ x: Math.round((last.x + x) / 2), y: last.y, world: worldNum(projects[i]) });
+      }
       if (x !== prev.x && y !== prev.y) points.push({ x: x, y: prev.y }); // the corner
       points.push({ x: x, y: y });
       stops.push({ kind: 'world', project: projects[i], index: i, point: points.length - 1, el: null });
@@ -351,6 +379,7 @@
 
     buildPath();
     layoutScenery();
+    buildZones();
     drawPath();
     buildNodes();
     buildCoins();
@@ -384,6 +413,95 @@
     cloudsF.style.backgroundPositionX = (-s * 0.15) + 'px';
     cloudsN.style.backgroundPositionX = (-s * 0.32) + 'px';
     hills.style.backgroundPositionX   = (-s * 0.55) + 'px';
+    var z = canvas.querySelectorAll('.zone');
+    for (var i = 0; i < z.length; i++) {
+      z[i].querySelector('.layer-clouds--far').style.backgroundPositionX  = (-s * 0.15) + 'px';
+      z[i].querySelector('.layer-clouds--near').style.backgroundPositionX = (-s * 0.32) + 'px';
+      z[i].querySelector('.layer-hills').style.backgroundPositionX        = (-s * 0.55) + 'px';
+    }
+  }
+
+  /* ======================================================================
+     WORLDS
+     World 1 is the map's own scenery. Every later world lays its own sky,
+     clouds, horizon and ground over the map from its gate onwards, fading in
+     across BLEND px so the change happens as you walk through the gate.
+     ====================================================================== */
+  function buildZones() {
+    var old = canvas.querySelectorAll('.zone, .world-gate');
+    for (var k = 0; k < old.length; k++) old[k].remove();
+
+    var landTop = Math.round(height * LAND_TOP);
+    for (var i = 0; i < gates.length; i++) {
+      var g = gates[i], info = worldInfo(g.world);
+      var left = g.x - BLEND / 2;
+
+      var zone = document.createElement('div');
+      zone.className = 'zone zone--' + (info.theme || 'grassland');
+      zone.setAttribute('aria-hidden', 'true');
+      zone.style.left  = left + 'px';
+      zone.style.width = (width - left) + 'px';
+      zone.style.setProperty('--blend', BLEND + 'px');
+      zone.innerHTML =
+        '<div class="zone__sky"></div>' +
+        '<div class="zone__sun"></div>' +
+        '<div class="layer-clouds layer-clouds--far"></div>' +
+        '<div class="layer-clouds layer-clouds--near"></div>' +
+        '<div class="layer-hills"></div>' +
+        '<div class="layer-land"></div>';
+      zone.querySelector('.zone__sun').style.top = (landTop - 150) + 'px';
+      zone.querySelector('.layer-hills').style.top = (landTop - 168) + 'px';
+      zone.querySelector('.layer-land').style.height = (height - landTop) + 'px';
+      canvas.insertBefore(zone, pathSvg);
+
+      var gate = document.createElement('div');
+      gate.className = 'world-gate';
+      gate.setAttribute('aria-hidden', 'true');
+      gate.style.left = g.x + 'px';
+      gate.style.top  = g.y + 'px';
+      gate.innerHTML =
+        '<span class="world-gate__banner">' +
+          '<span class="world-gate__world">WORLD ' + g.world + '</span>' +
+          (info.name ? '<span class="world-gate__name">' + esc(info.name) + '</span>' : '') +
+        '</span>' +
+        '<span class="world-gate__post world-gate__post--l"></span>' +
+        '<span class="world-gate__post world-gate__post--r"></span>';
+      canvas.insertBefore(gate, player);
+    }
+    parallax();
+  }
+
+  /* The world at a given x on the map. */
+  function worldAt(x) {
+    var w = projects.length ? worldNum(projects[0]) : 1;
+    for (var i = 0; i < gates.length; i++) if (x >= gates[i].x) w = gates[i].world;
+    return w;
+  }
+
+  /* Walking through a gate puts up the new world's name for a moment. */
+  var toastEl = null, toastTimer = null;
+  function noteWorld(x, quiet) {
+    var w = worldAt(x);
+    if (w === shownWorld) return;
+    var first = shownWorld === null;
+    shownWorld = w;
+    if (quiet || first) return;
+
+    var info = worldInfo(w);
+    announce('World ' + w + (info.name ? ', ' + info.name : ''));
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.className = 'world-toast';
+      toastEl.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(toastEl);
+    }
+    toastEl.innerHTML = '<span class="world-toast__world">WORLD ' + w + '</span>' +
+      (info.name ? '<span class="world-toast__name">' + esc(info.name) + '</span>' : '');
+    toastEl.classList.remove('is-on');
+    void toastEl.offsetWidth;
+    toastEl.classList.add('is-on');
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-on'); }, 1600);
   }
 
   /* ======================================================================
@@ -452,7 +570,10 @@
       pos     = { x: points[cursor].x, y: points[cursor].y };
       placeSprite(points[cursor]);
       centreOn(points[cursor].x, true);
-      busy = false;
+      busy  = false;
+      boost = 1;
+      player.classList.remove('is-fast');
+      noteWorld(points[cursor].x);
       var cb = walkDone; walkDone = null;
       if (cb) cb();
       updatePreview();
@@ -483,8 +604,8 @@
 
       /* Speed up from standing, but never faster than lets us stop in the
          path that is left. */
-      var brake = Math.sqrt(2 * WALK_DECEL * remainingPath());
-      speed = Math.min(WALK_SPEED, speed + WALK_ACCEL * dt, Math.max(brake, WALK_MIN));
+      var brake = Math.sqrt(2 * WALK_DECEL * boost * remainingPath());
+      speed = Math.min(WALK_SPEED * boost, speed + WALK_ACCEL * boost * dt, Math.max(brake, WALK_MIN));
 
       /* Spend this frame's movement along the path, carrying any left over
          through corners so the sprite does not hitch at each one. */
@@ -513,6 +634,7 @@
       placeSprite(pos);
       centreOn(pos.x, true);
       collectCoins(pos);
+      noteWorld(pos.x);
 
       stepTick += dt;
       if (stepTick > 0.15) { stepTick = 0; SITE.sfx.step(); }
@@ -523,11 +645,13 @@
     function finish() {
       placeSprite(points[cursor]);
       centreOn(points[cursor].x, true);
-      player.classList.remove('is-walking');
+      player.classList.remove('is-walking', 'is-fast');
       player.classList.add('is-idle');
       walking = false;
       busy    = false;
       speed   = 0;
+      boost   = 1;
+      noteWorld(points[cursor].x);
       var cb = walkDone; walkDone = null;
       if (cb) cb();
       updatePreview();
@@ -576,6 +700,7 @@
     var next = selected + delta;
     /* The start of the path is the front of the map, the castle the end. */
     if (next < 0 || next > stops.length - 1) return;
+    slowDown();
     select(next, { walk: true, force: true });
   }
 
@@ -584,6 +709,7 @@
        navigates. A plain walk is NOT a reason to ignore a click — clicking
        mid-walk retargets the sprite. */
     if (entering || hitting) return;
+    slowDown();
     var stop = stops[i];
 
     /* A ? block: walk under it, then jump and punch it. The start of the
@@ -643,6 +769,48 @@
     });
   }
 
+  /* ======================================================================
+     FAST-FORWARD
+     The button on the map that takes you straight to the newest published
+     project, so nobody has to walk through the older ones to see it. The
+     sprite runs there at whatever speed gets it there in about FF_SECONDS.
+     ====================================================================== */
+  function latestStop() {
+    for (var i = projects.length - 1; i >= 0; i--) {
+      if (!projects[i].locked) return worldStop[i];
+    }
+    return null;
+  }
+
+  function slowDown() {
+    boost = 1;
+    player.classList.remove('is-fast');
+  }
+
+  function pathBetween(a, b) {
+    var d = 0, dir = b > a ? 1 : -1;
+    for (var k = a; k !== b; k += dir) {
+      d += Math.hypot(points[k + dir].x - points[k].x, points[k + dir].y - points[k].y);
+    }
+    return d;
+  }
+
+  function fastForward() {
+    if (entering || hitting) return;
+    if (window.CHEST && window.CHEST.isOpen()) return;
+    var target = latestStop();
+    if (target === null) return;
+
+    selected = target;
+    paintSelection();
+    SITE.sfx.select();
+    var from = walking ? aim : cursor;
+    var dist = pathBetween(from, stops[target].point);
+    boost = Math.max(1, dist / (WALK_SPEED * FF_SECONDS));
+    if (boost > 1 && !SITE.reducedMotion()) player.classList.add('is-fast');
+    walkTo(target);
+  }
+
   /* Screen-reader status line for things that are only shown as animation. */
   function announce(msg) {
     var live = document.getElementById('map-status');
@@ -653,6 +821,17 @@
      INPUT
      ====================================================================== */
   function bindInput() {
+    var ff = document.getElementById('ff-latest');
+    if (ff) {
+      if (latestStop() === null) ff.hidden = true;
+      ff.addEventListener('click', function () {
+        fastForward();
+        /* Give the keyboard back to the map, or the next Enter (meant for a
+           pipe) would press this button again. */
+        ff.blur();
+      });
+    }
+
     canvas.addEventListener('click', function (ev) {
       var el = ev.target.closest('.node, .powerup');
       if (!el) return;
@@ -702,7 +881,7 @@
         case 'Enter':
         case ' ':
           /* If a node button has focus the browser fires click for us. */
-          if (ev.target.closest && ev.target.closest('.node, .castle, .powerup')) return;
+          if (ev.target.closest && ev.target.closest('.node, .castle, .powerup, .ff-button')) return;
           ev.preventDefault();
           enter(selected);
           break;
@@ -861,7 +1040,8 @@
        later fresh visit to the map would climb out of a pipe for no reason. */
     takePipe();
 
-    player.classList.remove('is-entering', 'is-walking', 'is-exiting', 'is-hitting');
+    boost = 1;
+    player.classList.remove('is-entering', 'is-walking', 'is-exiting', 'is-hitting', 'is-fast');
     player.classList.add('is-idle');
     var faded = canvas.querySelectorAll('.node.is-diving');
     for (var k = 0; k < faded.length; k++) faded[k].classList.remove('is-diving');
@@ -1080,6 +1260,7 @@
     placeSprite(points[cursor]);
     paintSelection();
     centreOn(points[cursor].x, true);
+    noteWorld(points[cursor].x, true);
     updatePreview();
   }
 
