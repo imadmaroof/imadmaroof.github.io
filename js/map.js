@@ -26,8 +26,9 @@
 
   /* --- layout constants -------------------------------------------------- */
   var NODE_GAP   = 340;   // horizontal px between world nodes (a ? block sits halfway)
-  var START_X    = 70;    // px from the left edge to the start of the path
-  var START_PAD  = 210;   // px from the left edge to world 1
+  var ENTRY_X    = 95;    // the World 1 gate the path comes in through
+  var START_X    = 230;   // px from the left edge to the start of the path
+  var START_PAD  = 370;   // px from the left edge to world 1
   var CASTLE_GAP = 280;   // px from the last world to the castle
   var END_PAD    = 190;   // px of map after the castle
   var WORLD_GAP  = 200;   // extra px where one world ends and the next begins
@@ -184,12 +185,17 @@
     gates  = [];
 
     var startY = Math.round(height * TRAIL_Y);
+    /* The path comes in from the left edge through the first world's gate,
+       and the start stop is just past it. Nobody walks the bit before the
+       start; it is there so the map has a way in. */
+    points.push({ x: 0, y: startY });
+    gates.push({ x: ENTRY_X, y: startY, world: projects.length ? worldNum(projects[0]) : 1, entry: true });
     points.push({ x: START_X, y: startY });
     /* The start of the path is a stop in its own right: you can always walk
        back to it, and it may carry the first ? block. */
-    stops.push({ kind: 'start', powerup: powerupAfter('start'), point: 0, el: null });
+    stops.push({ kind: 'start', powerup: powerupAfter('start'), point: points.length - 1, el: null });
 
-    var prev = points[0];
+    var prev = points[points.length - 1];
 
     function blockOnRun(afterKey, nextX) {
       var pu = powerupAfter(afterKey);
@@ -341,8 +347,9 @@
     for (var k = 0; k < coinEls.length; k++) coinEls[k].el.remove();
     coinEls = [];
 
-    /* One coin halfway along each horizontal run of the path. */
-    for (var i = 1; i < points.length; i++) {
+    /* One coin halfway along each horizontal run of the path (from the
+       start on: nobody walks the way in). */
+    for (var i = stops[0].point + 1; i < points.length; i++) {
       var a = points[i - 1], b = points[i];
       if (a.y !== b.y) continue;                       // vertical run, skip
       if (Math.abs(b.x - a.x) < 140) continue;         // too short to bother
@@ -436,23 +443,26 @@
       var g = gates[i], info = worldInfo(g.world);
       var left = g.x - BLEND / 2;
 
-      var zone = document.createElement('div');
-      zone.className = 'zone zone--' + (info.theme || 'grassland');
-      zone.setAttribute('aria-hidden', 'true');
-      zone.style.left  = left + 'px';
-      zone.style.width = (width - left) + 'px';
-      zone.style.setProperty('--blend', BLEND + 'px');
-      zone.innerHTML =
-        '<div class="zone__sky"></div>' +
-        '<div class="zone__sun"></div>' +
-        '<div class="layer-clouds layer-clouds--far"></div>' +
-        '<div class="layer-clouds layer-clouds--near"></div>' +
-        '<div class="layer-hills"></div>' +
-        '<div class="layer-land"></div>';
-      zone.querySelector('.zone__sun').style.top = (landTop - 150) + 'px';
-      zone.querySelector('.layer-hills').style.top = (landTop - 168) + 'px';
-      zone.querySelector('.layer-land').style.height = (height - landTop) + 'px';
-      canvas.insertBefore(zone, pathSvg);
+      /* The first world's gate is just a sign: its scenery is the map's own. */
+      if (!g.entry) {
+        var zone = document.createElement('div');
+        zone.className = 'zone zone--' + (info.theme || 'grassland');
+        zone.setAttribute('aria-hidden', 'true');
+        zone.style.left  = left + 'px';
+        zone.style.width = (width - left) + 'px';
+        zone.style.setProperty('--blend', BLEND + 'px');
+        zone.innerHTML =
+          '<div class="zone__sky"></div>' +
+          '<div class="zone__sun"></div>' +
+          '<div class="layer-clouds layer-clouds--far"></div>' +
+          '<div class="layer-clouds layer-clouds--near"></div>' +
+          '<div class="layer-hills"></div>' +
+          '<div class="layer-land"></div>';
+        zone.querySelector('.zone__sun').style.top = (landTop - 150) + 'px';
+        zone.querySelector('.layer-hills').style.top = (landTop - 168) + 'px';
+        zone.querySelector('.layer-land').style.height = (height - landTop) + 'px';
+        canvas.insertBefore(zone, pathSvg);
+      }
 
       var gate = document.createElement('div');
       gate.className = 'world-gate';
