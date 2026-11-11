@@ -265,14 +265,19 @@
 
     for (var i = 0; i < projects.length; i++) {
       var p = projects[i];
+      /* A locked project with a picture or video is work in progress: a real
+         pipe, sealed shut, with a preview but no page. Without media it is a
+         plain placeholder, a grey ? block. */
+      var sealed = isSealed(p);
       var el = document.createElement('button');
       el.type = 'button';
-      el.className = 'node' + (p.locked ? ' node--locked' : '');
+      el.className = 'node' + (sealed ? ' node--sealed' : (p.locked ? ' node--locked' : ''));
       el.id = 'world-' + p.id;
       el.dataset.stop = String(worldStop[i]);
       el.title = p.blurb || '';
       el.setAttribute('aria-label',
-        'World ' + p.world + ', ' + p.title + (p.locked ? ' (locked)' : '') + '. ' + (p.blurb || ''));
+        'World ' + p.world + ', ' + p.title +
+        (sealed ? ' (in progress, no page yet)' : (p.locked ? ' (locked)' : '')) + '. ' + (p.blurb || ''));
       if (p.locked) el.setAttribute('aria-disabled', 'true');
 
       el.innerHTML =
@@ -282,10 +287,11 @@
           '<span class="node__title">' + esc(p.title) + '</span>' +
         '</span>' +
         '<span class="node__post" aria-hidden="true"></span>' +
-        (p.locked
+        (p.locked && !sealed
           ? '<span class="qblock" aria-hidden="true">?</span>'
-          : '<span class="pipe" aria-hidden="true">' +
+          : '<span class="pipe' + (sealed ? ' pipe--sealed' : '') + '" aria-hidden="true">' +
               '<span class="pipe__rim"><span class="pipe__mouth"></span></span>' +
+              (sealed ? '<span class="pipe__lid"></span>' : '') +
               '<span class="pipe__body"></span>' +
             '</span>');
 
@@ -318,6 +324,8 @@
 
     buildBlocks();
   }
+
+  function isSealed(p) { return !!(p && p.locked && p.media); }
 
   /* --- ? blocks ---------------------------------------------------------- */
   function buildBlocks() {
@@ -744,16 +752,18 @@
     selected = i; paintSelection();
 
     walkTo(i, function () {
-      /* Locked worlds bump like an empty ? block and go nowhere. */
+      /* Locked worlds bump like an empty ? block and go nowhere. A sealed
+         pipe bumps its lid. */
       if (p.locked) {
-        var block = stop.el.querySelector('.qblock');
+        var block = stop.el.querySelector('.qblock, .pipe__lid');
         if (block) {
           block.classList.remove('is-bumped');
           void block.offsetWidth;            // restart the animation
           block.classList.add('is-bumped');
         }
         SITE.sfx.bump();
-        announce(p.world + ' is locked. Nothing here yet.');
+        announce(isSealed(p) ? p.title + ' is still in progress. No page yet.'
+                             : p.world + ' is locked. Nothing here yet.');
         return;
       }
 
@@ -946,8 +956,11 @@
     if (!listEl) return;
     var html = '';
 
-    for (var i = 0; i < projects.length; i++) {
+    /* Newest first and published only, the same as LIST VIEW: on a phone
+       this list IS the map, and the latest work should be on top. */
+    for (var i = projects.length - 1; i >= 0; i--) {
       var p = projects[i];
+      if (p.locked) continue;
       var icon = p.locked
         ? '<span class="qblock" aria-hidden="true">?</span>'
         : '<span class="pipe" aria-hidden="true">' +
@@ -975,7 +988,7 @@
         '<span>' +
           '<span class="level-card__world">CASTLE</span>' +
           '<span class="level-card__title">GET IN TOUCH</span>' +
-          '<span class="level-card__blurb">Placeholder blurb for the contact page.</span>' +
+          '<span class="level-card__blurb">Email, LinkedIn, phone and GitHub.</span>' +
         '</span>' +
       '</a>';
 
@@ -1101,7 +1114,7 @@
 
   function renderPreview(p) {
     var el   = previewLayer();
-    el.classList.toggle('preview--locked', !!p.locked);
+    el.classList.toggle('preview--locked', !!p.locked && !isSealed(p));
     el.innerHTML =
       '<div class="preview__card">' +
         '<div class="preview__banner">' +
@@ -1111,7 +1124,8 @@
         '<div class="preview__media">' + previewMedia(p) + '</div>' +
         '<p class="preview__abstract">' + esc(p.abstract || p.blurb || '') + '</p>' +
         '<p class="preview__cta">' +
-          (p.locked ? 'NOT PUBLISHED YET' : 'ENTER &gt;&gt; PLAY LEVEL') +
+          (isSealed(p) ? 'IN PROGRESS &middot; NO PAGE YET'
+                       : (p.locked ? 'NOT PUBLISHED YET' : 'ENTER &gt;&gt; PLAY LEVEL')) +
         '</p>' +
       '</div>' +
       '<span class="preview__tail"></span>';

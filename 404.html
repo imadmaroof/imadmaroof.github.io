@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GAME OVER &mdash; Imad Aboo</title>
+<meta name="robots" content="noindex">
+<!-- GitHub Pages shows this file for any address that does not exist, at
+     that address. So every path here starts from the site root (/css/...),
+     never relative, or it would break one folder down. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%235c94fc'/%3E%3Crect x='2' y='3' width='12' height='11' fill='%23241c2c'/%3E%3Crect x='3' y='4' width='10' height='9' fill='%2339c5bb'/%3E%3Crect x='5' y='7' width='2' height='3' fill='%23fff'/%3E%3Crect x='9' y='7' width='2' height='3' fill='%23fff'/%3E%3C/svg%3E">
+</head>
+
+<body class="page page--gameover">
+
+<header class="hud">
+  <a class="hud__name" href="/">IMAD <span>ABOO</span></a>
+  <span class="hud__spacer"></span>
+  <nav class="hud__nav" aria-label="Main">
+    <a href="/">MAP</a>
+    <a class="hud__key" href="/pages/all-projects.html">LIST<span class="hud__wide"> VIEW</span></a>
+    <a class="hud__key" href="/resume.pdf">RESUME</a>
+    <a href="/pages/about.html">ABOUT</a>
+    <a href="/pages/contact.html">CONTACT</a>
+    <button type="button" class="hud__toggle" data-sound-toggle aria-pressed="false">SFX OFF</button>
+  </nav>
+</header>
+
+<main class="wrap gameover">
+  <div class="gameover__screen">
+    <div class="gameover__sprite" id="gameover-sprite" aria-hidden="true"></div>
+    <h1 class="gameover__title">GAME OVER</h1>
+    <p class="gameover__code">404 &middot; PAGE NOT FOUND</p>
+    <p class="gameover__text">This page doesn't exist, or it has moved.</p>
+    <p class="gameover__continue" aria-hidden="true">CONTINUE?</p>
+    <div class="link-row gameover__choices">
+      <a class="btn btn--gold" id="gameover-yes" href="/">YES &gt;&gt; BACK TO THE MAP</a>
+      <a class="btn" href="/pages/all-projects.html">LIST VIEW</a>
+    </div>
+  </div>
+</main>
+
+<script src="/js/sprite.js"></script>
+<script src="/js/site.js"></script>
+<script>
+/* The player, fallen over. Focus starts on YES, so Enter continues. */
+(function () {
+  var s = window.PLAYER_SPRITE, box = document.getElementById('gameover-sprite');
+  if (s && window.PIXEL && box) {
+    box.innerHTML = window.PIXEL.svg({ idle: s.frames.idle }, s.palette, s.width, s.height);
+  }
+  var yes = document.getElementById('gameover-yes');
+  if (yes) yes.focus({ preventScroll: true });
+}());
+</script>
+</body>
+</html>

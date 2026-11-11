@@ -35,16 +35,18 @@ const PROJECTS = [
     media:    'worlds/media/airframe-ae.mp4'
   },
 
-  /* ---- WORLD 2-1 (placeholder until the next project is ready) ---------- */
+  /* ---- WORLD 2-1 (in progress: a sealed pipe with a preview, no page) --- */
   {
-    id:     'world-2-next',
-    world:  '2-1',
-    title:  'COMING SOON',
-    blurb:  'The next project is on its way.',
-    page:   '',
-    locked: true,
-    tech:   [],
-    links:  []
+    id:       'sentry',
+    world:    '2-1',
+    title:    'SENTRY',
+    blurb:    'CAD of a single-shot launcher mechanism. Work in progress.',
+    page:     '',
+    locked:   true,
+    tech:     [],
+    links:    [],
+    abstract: 'CAD of a single-shot launcher mechanism. Work in progress.',
+    media:    'worlds/media/sentry.mp4'
   }
 
 ];
