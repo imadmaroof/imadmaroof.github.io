@@ -78,6 +78,17 @@
   --hat-lo:         #c98f2e;
   --band:           #d83a3a;   /* hat band, and the tie                      */
   --band-lo:        #9c2430;
+
+  /* --- World 2: sunset coast (css section 19) ---------------------------- */
+  --dusk-top:       #3d2a6e;
+  --dusk-mid:       #a8467e;
+  --dusk-low:       #ec7d4e;
+  --dusk-haze:      #ffc978;
+  --foam:           #fffdf2;
+  --sand-wet:       #c9a061;
+  --sand-hi:        #f7e0a3;
+  --sand:           #edc97c;
+  --sand-lo:        #d8ac62;
   --hair:           #17121d;
   --hair-hi:        #3b3048;
   --skin-hi:        #d6946a;
@@ -1967,4 +1978,170 @@ p:last-child { margin-bottom: 0; }
   height: auto;
   background: var(--ink);
   border: var(--bevel) solid var(--ink);
+}
+
+/* --------------------------------------------------------------------------
+   19. WORLDS (js/map.js buildZones)
+   World 1 is the map's own scenery (section 6). Each later world is a .zone:
+   its own sky, clouds, horizon and ground, laid over the map from its gate
+   onwards and faded in across --blend px. A theme is a set of overrides on
+   the same layer classes, so adding one means adding a block like
+   .zone--coast below and naming it in WORLDS in js/projects.js.
+   -------------------------------------------------------------------------- */
+.zone {
+  position: absolute;
+  top: 0; bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--blend, 260px));
+          mask-image: linear-gradient(90deg, transparent 0, #000 var(--blend, 260px));
+}
+.zone__sky { position: absolute; inset: 0; }
+.zone__sun { display: none; }
+
+/* --- 19a. SUNSET COAST: dusk sky, the sea on the horizon, a sandy shore --- */
+.zone--coast .zone__sky {
+  background: linear-gradient(180deg,
+              var(--dusk-top) 0%, var(--dusk-mid) 18%,
+              var(--dusk-low) 31%, var(--dusk-haze) 40%);
+}
+.zone--coast .zone__sun {
+  display: block;
+  position: absolute;
+  left: calc(var(--blend, 260px) + 140px);
+  width: 112px; height: 112px;          /* 28 x 28 at 4x */
+  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' shape-rendering='crispEdges'%3E%3Cg fill='%23ffe27a'%3E%3Crect x='11' y='0' width='6' height='1'/%3E%3Crect x='8' y='1' width='12' height='1'/%3E%3Crect x='7' y='2' width='14' height='1'/%3E%3Crect x='5' y='3' width='18' height='1'/%3E%3Crect x='4' y='4' width='20' height='1'/%3E%3Crect x='3' y='5' width='22' height='1'/%3E%3Crect x='3' y='6' width='22' height='1'/%3E%3Crect x='2' y='7' width='24' height='1'/%3E%3Crect x='2' y='8' width='24' height='1'/%3E%3Crect x='1' y='9' width='26' height='1'/%3E%3Crect x='1' y='10' width='26' height='1'/%3E%3Crect x='1' y='11' width='26' height='1'/%3E%3Crect x='1' y='12' width='26' height='1'/%3E%3C/g%3E%3Cg fill='%23ffab45'%3E%3Crect x='1' y='13' width='26' height='1'/%3E%3Crect x='1' y='14' width='26' height='1'/%3E%3Crect x='1' y='15' width='26' height='1'/%3E%3Crect x='1' y='16' width='26' height='1'/%3E%3Crect x='1' y='17' width='26' height='1'/%3E%3Crect x='2' y='19' width='24' height='1'/%3E%3Crect x='2' y='20' width='24' height='1'/%3E%3Crect x='3' y='22' width='22' height='1'/%3E%3Crect x='5' y='24' width='18' height='1'/%3E%3Crect x='11' y='27' width='6' height='1'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+}
+.zone--coast .layer-clouds--far  { background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='110' shape-rendering='crispEdges'%3E%3Cg fill='%23f4a6a0'%3E%3Crect x='40' y='40' width='96' height='24'/%3E%3Crect x='56' y='28' width='60' height='12'/%3E%3Crect x='72' y='20' width='32' height='8'/%3E%3Crect x='232' y='56' width='80' height='20'/%3E%3Crect x='248' y='46' width='48' height='10'/%3E%3C/g%3E%3Cg fill='%23ffd1c4'%3E%3Crect x='56' y='28' width='36' height='8'/%3E%3Crect x='72' y='20' width='20' height='6'/%3E%3Crect x='248' y='46' width='28' height='6'/%3E%3C/g%3E%3Cg fill='%23c96a86'%3E%3Crect x='40' y='58' width='96' height='6'/%3E%3Crect x='232' y='70' width='80' height='6'/%3E%3C/g%3E%3C/svg%3E"); }
+.zone--coast .layer-clouds--near { background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='150' shape-rendering='crispEdges'%3E%3Cg fill='%23ffd9c2'%3E%3Crect x='24' y='60' width='140' height='32'/%3E%3Crect x='48' y='44' width='92' height='16'/%3E%3Crect x='72' y='32' width='48' height='12'/%3E%3Crect x='300' y='86' width='120' height='28'/%3E%3Crect x='324' y='72' width='72' height='14'/%3E%3Crect x='344' y='62' width='36' height='10'/%3E%3C/g%3E%3Cg fill='%23f6ad9a'%3E%3Crect x='24' y='84' width='140' height='8'/%3E%3Crect x='140' y='60' width='24' height='24'/%3E%3Crect x='300' y='106' width='120' height='8'/%3E%3Crect x='396' y='86' width='24' height='20'/%3E%3C/g%3E%3Cg fill='%23e48a8e'%3E%3Crect x='24' y='90' width='140' height='4'/%3E%3Crect x='300' y='112' width='120' height='4'/%3E%3C/g%3E%3C/svg%3E"); opacity: .9; }
+.zone--coast .layer-hills        { background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='190' shape-rendering='crispEdges'%3E%3Cg fill='%232f6ea6'%3E%3Crect x='0' y='118' width='420' height='72'/%3E%3C/g%3E%3Cg fill='%235d9fcf'%3E%3Crect x='0' y='121' width='420' height='14'/%3E%3C/g%3E%3Cg fill='%23ffc978'%3E%3Crect x='0' y='118' width='420' height='3'/%3E%3C/g%3E%3Cg fill='%234a2f63'%3E%3Crect x='40' y='110' width='110' height='8'/%3E%3Crect x='56' y='102' width='78' height='8'/%3E%3Crect x='76' y='96' width='40' height='6'/%3E%3Crect x='280' y='112' width='50' height='6'/%3E%3Crect x='292' y='106' width='26' height='6'/%3E%3Crect x='101' y='82' width='3' height='14'/%3E%3Crect x='92' y='78' width='20' height='4'/%3E%3Crect x='88' y='80' width='6' height='2'/%3E%3Crect x='108' y='80' width='6' height='2'/%3E%3C/g%3E%3Cg fill='%239fd8ef'%3E%3Crect x='20' y='146' width='24' height='2'/%3E%3Crect x='90' y='160' width='32' height='2'/%3E%3Crect x='180' y='150' width='20' height='2'/%3E%3Crect x='250' y='172' width='28' height='2'/%3E%3Crect x='330' y='142' width='24' height='2'/%3E%3Crect x='380' y='164' width='20' height='2'/%3E%3Crect x='140' y='182' width='26' height='2'/%3E%3C/g%3E%3C/svg%3E"); }
+.zone--coast .layer-land {
+  background:
+    linear-gradient(180deg,
+      var(--foam)     0 4px,
+      var(--sand-wet) 4px 12px,
+      var(--sand-hi)  12px 40px,
+      var(--sand)     40px 96px,
+      var(--sand-lo)  96px calc(100% - 46px),
+      var(--dirt)     calc(100% - 46px) calc(100% - 26px),
+      var(--dirt-lo)  calc(100% - 26px) 100%);
+}
+.zone--coast .layer-land::after {
+  background-image:
+    linear-gradient(45deg, var(--sand-lo) 25%, transparent 25% 75%, var(--sand-lo) 75%),
+    linear-gradient(45deg, var(--sand-lo) 25%, transparent 25% 75%, var(--sand-lo) 75%);
+}
+.zone--coast .layer-land::before { background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='10' shape-rendering='crispEdges'%3E%3Cg fill='%23fffdf2'%3E%3Crect x='0' y='6' width='48' height='4'/%3E%3Crect x='3' y='3' width='11' height='3'/%3E%3Crect x='5' y='1' width='6' height='2'/%3E%3Crect x='19' y='4' width='9' height='2'/%3E%3Crect x='31' y='2' width='13' height='4'/%3E%3Crect x='34' y='0' width='7' height='2'/%3E%3C/g%3E%3C/svg%3E"); }
+
+/* --- 19b. the gate where a new world starts ------------------------------ */
+.world-gate {
+  position: absolute;
+  width: 150px; height: 128px;
+  transform: translate(-50%, -100%);
+  z-index: 6;                           /* over the path, under the sprite */
+  pointer-events: none;
+}
+.world-gate__post {
+  position: absolute;
+  bottom: -6px;
+  width: 12px; height: 104px;
+  background: linear-gradient(90deg, var(--dirt-hi) 0 4px, var(--dirt) 4px 8px, var(--dirt-lo) 8px);
+  border: 3px solid var(--ink);
+}
+.world-gate__post--l { left: 10px; }
+.world-gate__post--r { right: 10px; }
+.world-gate__banner {
+  position: absolute;
+  z-index: 1;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 4px 7px;
+  background: var(--panel-alt);
+  border: 3px solid var(--ink);
+  box-shadow: inset 2px 2px 0 var(--panel-alt-hi), 4px 4px 0 rgba(0, 0, 0, .35);
+}
+.world-gate__world { font-family: var(--font-pixel); font-size: 11px; color: var(--gold); text-shadow: 2px 2px 0 var(--gold-deep); }
+.world-gate__name  { font-family: var(--font-pixel); font-size: 6px; color: var(--text-invert); white-space: nowrap; }
+
+/* --- 19c. the world name, shown for a moment on walking through a gate ---
+   Bottom-left: preview cards pop up in the sky, so this never covers one. */
+.world-toast {
+  position: fixed;
+  left: 18px; bottom: 18px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(43, 36, 64, .92);
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, .35);
+  opacity: 0;
+  pointer-events: none;
+}
+.world-toast.is-on { animation: world-toast 1600ms linear forwards; }
+@keyframes world-toast {
+  0%   { opacity: 0; transform: translateY(10px); }
+  10%  { opacity: 1; transform: translateY(0); }
+  85%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(0); }
+}
+.world-toast__world { font-family: var(--font-pixel); font-size: 16px; color: var(--gold); text-shadow: 3px 3px 0 var(--gold-deep); }
+.world-toast__name  { font-family: var(--font-pixel); font-size: 8px; color: var(--text-invert); }
+
+/* --- 19d. fast-forward to the newest project ----------------------------- */
+.ff-button {
+  position: fixed;
+  right: 18px; bottom: 18px;
+  z-index: 45;                          /* over the map, under the HUD */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 12px;
+  font-family: var(--font-pixel);
+  color: var(--ink);
+  text-align: left;
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  box-shadow:
+    inset 3px 3px 0 var(--gold-hi),
+    inset -3px -3px 0 var(--gold-lo),
+    4px 4px 0 rgba(0, 0, 0, .4);
+  cursor: pointer;
+}
+.ff-button[hidden] { display: none; }
+.ff-button:hover { background: var(--gold-hi); transform: translateY(-2px); }
+.ff-button:focus-visible { outline: 3px solid var(--panel-hi); outline-offset: 3px; }
+.ff-button__arrow { display: block; width: 28px; height: 18px; }
+.ff-button__arrow svg { display: block; width: 100%; height: 100%; animation: ff-nudge 1.8s steps(1, end) infinite; }
+@keyframes ff-nudge {
+  0%, 70%, 100% { transform: translateX(0); }
+  78%           { transform: translateX(4px); }
+  86%           { transform: translateX(0); }
+  92%           { transform: translateX(4px); }
+}
+.ff-button__text  { display: flex; flex-direction: column; gap: 5px; }
+.ff-button__big   { font-size: 10px; line-height: 1; }
+.ff-button__small { font-size: 7px; line-height: 1; }
+
+/* the sprite at fast-forward speed: quicker stride, a trail behind it */
+.player.is-fast { --walk-cycle: .14s; }
+.player.is-fast svg {
+  filter: drop-shadow(-12px 0 0 rgba(255, 253, 242, .35))
+          drop-shadow(-12px 0 0 rgba(255, 253, 242, .2));
+}
+
+@media (max-width: 1000px) {
+  .ff-button, .world-toast { bottom: 66px; }   /* clear of the controls bar */
+}
+@media (max-width: 767px) {
+  .ff-button { display: none; }         /* no map on phones */
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-toast.is-on { animation: none; opacity: 1; }
+  .ff-button:hover { transform: none; }
 }

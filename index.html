@@ -178,6 +178,25 @@
   <span>OR JUST CLICK</span>
 </p>
 
+<!-- Fast-forward: straight to the newest project (js/map.js). Fixed to the
+     corner of the screen so it is always there, wherever you are on the map. -->
+<button type="button" id="ff-latest" class="ff-button">
+  <span class="ff-button__arrow" aria-hidden="true">
+    <svg viewBox="0 0 14 9" shape-rendering="crispEdges">
+      <rect x="0" y="0" width="1" height="9" class="px-ink"/><rect x="1" y="1" width="1" height="7" class="px-ink"/>
+      <rect x="2" y="2" width="1" height="5" class="px-ink"/><rect x="3" y="3" width="1" height="3" class="px-ink"/>
+      <rect x="4" y="4" width="1" height="1" class="px-ink"/>
+      <rect x="7" y="0" width="1" height="9" class="px-ink"/><rect x="8" y="1" width="1" height="7" class="px-ink"/>
+      <rect x="9" y="2" width="1" height="5" class="px-ink"/><rect x="10" y="3" width="1" height="3" class="px-ink"/>
+      <rect x="11" y="4" width="1" height="1" class="px-ink"/>
+    </svg>
+  </span>
+  <span class="ff-button__text">
+    <span class="ff-button__big">FAST-FORWARD</span>
+    <span class="ff-button__small">TO MOST RECENT PROJECTS</span>
+  </span>
+</button>
+
 <!-- status line for screen readers -->
 <p id="map-status" class="sr-only" role="status" aria-live="polite"></p>
 
