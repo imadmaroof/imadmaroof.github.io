@@ -692,6 +692,7 @@
 
     document.addEventListener('keydown', function (ev) {
       if (ev.target.matches && ev.target.matches('input, textarea, select')) return;
+      if (window.INTRO && window.INTRO.isOpen()) return;   // mode select is up
       if (window.CHEST && window.CHEST.isOpen()) return;
 
       switch (ev.key) {
