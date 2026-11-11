@@ -620,6 +620,35 @@ p:last-child { margin-bottom: 0; }
 }
 .qblock.is-bumped { animation: qbump .28s steps(4, end); }
 
+/* A sealed pipe: work in progress. A real pipe with a bolted metal lid over
+   the mouth, so it plainly cannot be entered yet. Entering bumps the lid. */
+.node--sealed { cursor: not-allowed; }
+.pipe__lid {
+  position: absolute;
+  z-index: 3;
+  top: -8px; left: 50%;
+  width: 100px; height: 14px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg,
+              var(--stone-hi) 0 3px, var(--stone) 3px 8px, var(--stone-lo) 8px);
+  border: 3px solid var(--ink);
+}
+.pipe__lid::before,
+.pipe__lid::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  width: 4px; height: 4px;
+  background: var(--stone-deep);
+}
+.pipe__lid::before { left: 7px; }
+.pipe__lid::after  { right: 7px; }
+.pipe__lid.is-bumped { animation: lid-bump .28s steps(4, end); }
+@keyframes lid-bump {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  40%      { transform: translateX(-50%) translateY(-7px); }
+}
+
 /* --- 6h. hover / selected node states ------------------------------------- */
 .node:hover .node__sign,
 .node.is-selected .node__sign { transform: translateY(-3px); }
@@ -2145,3 +2174,42 @@ p:last-child { margin-bottom: 0; }
   .world-toast.is-on { animation: none; opacity: 1; }
   .ff-button:hover { transform: none; }
 }
+
+/* --------------------------------------------------------------------------
+   20. GAME OVER (404.html)
+   -------------------------------------------------------------------------- */
+.gameover { display: grid; place-items: center; min-height: calc(100vh - var(--hud-h) - 80px); }
+.gameover__screen {
+  width: min(560px, 100%);
+  padding: 34px 24px 30px;
+  text-align: center;
+  background: var(--panel-alt);
+  border: var(--bevel) solid var(--ink);
+  box-shadow: inset 3px 3px 0 var(--panel-alt-hi), 6px 6px 0 rgba(0, 0, 0, .35);
+}
+/* the 16 x 24 sprite at 3x, lying on its back */
+.gameover__sprite { width: 72px; height: 48px; margin: 0 auto 22px; position: relative; }
+.gameover__sprite svg {
+  position: absolute;
+  left: 12px; top: -12px;
+  width: 48px; height: 72px;
+  transform: rotate(-90deg);
+}
+.gameover__title {
+  margin: 0 0 14px;
+  font-family: var(--font-pixel);
+  font-size: clamp(22px, 6vw, 34px);
+  color: var(--accent);
+  text-shadow: 4px 4px 0 var(--ink);
+}
+.gameover__code { margin: 0 0 10px; font-family: var(--font-pixel); font-size: 9px; color: var(--gold); }
+.gameover__text { margin: 0; color: var(--text-invert); }
+.gameover__continue {
+  margin: 28px 0 14px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--text-invert);
+  animation: gameover-blink 1s steps(1, end) infinite;
+}
+@keyframes gameover-blink { 50% { opacity: 0; } }
+.gameover__choices { justify-content: center; }
