@@ -65,6 +65,7 @@
     <a class="hud__key" href="/resume.pdf">RESUME</a>
     <a href="about.html">ABOUT</a>
     <a href="contact.html">CONTACT</a>
+    <button type="button" class="hud__toggle hud__settings" data-settings aria-expanded="false" aria-haspopup="dialog"><svg class="hud__gear" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor"><rect x="3" y="0" width="3" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="3" y="1" width="3" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="2" y="2" width="5" height="1"/><rect x="0" y="3" width="4" height="1"/><rect x="5" y="3" width="4" height="1"/><rect x="0" y="4" width="3" height="1"/><rect x="6" y="4" width="3" height="1"/><rect x="0" y="5" width="4" height="1"/><rect x="5" y="5" width="4" height="1"/><rect x="2" y="6" width="5" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="3" y="7" width="3" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="3" y="8" width="3" height="1"/></svg><span class="hud__settings-label">SETTINGS</span></button>
   </nav>
 </header>
 
@@ -83,7 +84,7 @@
   </div>
 
   <!-- The list is rendered from js/projects.js by the script at the bottom
-       of this file. This is the only JS on the page. -->
+       of this file; js/site.js only adds the SETTINGS panel. -->
   <ol class="plainlist" id="plainlist"></ol>
 
   <noscript>
@@ -107,6 +108,8 @@
 </main>
 
 <script src="../js/projects.js"></script>
+<!-- Shared behaviour: only the SETTINGS panel is used on this page. -->
+<script src="../js/site.js"></script>
 <script>
 /* --------------------------------------------------------------------------
    Render PROJECTS as a flat list. No animation, no transitions, no state.
@@ -157,7 +160,7 @@
     var tech = p.tech || [];
     var links = p.links || [];
 
-    html += '<li class="plainlist__item' + (p.locked ? ' plainlist__item--locked' : '') + '">';
+    html += '<li class="plainlist__item' + (p.locked ? ' plainlist__item--locked' : '') + '" id="' + esc(p.id) + '">';
 
     /* --- heading: world tag + title --------------------------------- */
     html += '<div class="plainlist__head">' +

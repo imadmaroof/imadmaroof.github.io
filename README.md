@@ -12,8 +12,9 @@ world has its own scenery. The castle at the end is how to get in touch.
 ## Getting around
 
 When you arrive you pick a mode: **ADVENTURE** (the map) or **LIST VIEW**
-(every project on one plain page, no game). You can switch any time from the
-top bar.
+(every project on one plain page, no game). The site remembers your pick for
+next time, and **SETTINGS** (the gear in the top bar) changes it, along with
+sound.
 
 - **Left / right arrows** or **click** to walk along the path
 - **Up** under a **?** block to jump and hit it
@@ -21,6 +22,8 @@ top bar.
 - **FAST-FORWARD** (bottom-right of the map) jumps straight to my most recent
   project
 - **LIST VIEW** in the top bar switches to the plain list, newest first
+- On a project page, **PREVIOUS** / **NEXT** step through the projects and
+  **BACK TO LIST** returns to the list; the corner pipe goes back to the map
 - **RESUME** in the top bar opens my resume
 - On a phone, the map turns into a simple scrollable list
 

@@ -1661,13 +1661,9 @@ p:last-child { margin-bottom: 0; }
 }
 
 /* The nav is tight once there are five items in it. Below 480px "LIST VIEW"
-   drops to "LIST", and below 380px the SFX button goes the same way the coin
-   pill already does — it is decoration, the navigation is not. */
+   drops to "LIST", and below 560px SETTINGS shrinks to just its gear. */
 @media (max-width: 480px) {
   .hud__wide { display: none; }
-}
-@media (max-width: 380px) {
-  .hud__toggle { display: none; }
 }
 
 /* --------------------------------------------------------------------------
@@ -2213,3 +2209,105 @@ p:last-child { margin-bottom: 0; }
 }
 @keyframes gameover-blink { 50% { opacity: 0; } }
 .gameover__choices { justify-content: center; }
+
+/* --------------------------------------------------------------------------
+   21. SETTINGS (the gear in the top bar; js/site.js bindSettings)
+   -------------------------------------------------------------------------- */
+.hud__settings { display: inline-flex; align-items: center; gap: 7px; }
+.hud__gear { display: block; width: 11px; height: 11px; flex: none; }
+.hud__settings[aria-expanded="true"] { background: var(--water-lo); }
+@media (max-width: 560px) {
+  .hud__settings-label { display: none; }
+}
+
+.settings {
+  position: fixed;
+  z-index: 80;                          /* over the map and its buttons */
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  padding: 14px 14px 12px;
+  font-family: var(--font-pixel);
+  color: var(--text-invert);
+  background: var(--panel-alt);
+  border: 3px solid var(--ink);
+  box-shadow: inset 2px 2px 0 var(--panel-alt-hi), 5px 5px 0 rgba(0, 0, 0, .4);
+}
+.settings[hidden] { display: none; }
+.settings__title { margin: 0 0 14px; font-size: 10px; color: var(--gold); }
+.settings__row { display: block; margin: 0 0 14px; }
+.settings__label { display: block; margin: 0 0 7px; font-size: 7px; color: var(--locked); }
+.settings__opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.settings__opts button {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1;
+  padding: 8px 9px;
+  color: var(--text-invert);
+  background: var(--panel-alt-hi);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+}
+.settings__opts button:hover { background: var(--water-lo); }
+.settings__opts button[aria-pressed="true"] {
+  color: var(--ink);
+  background: var(--gold);
+  box-shadow: inset 2px 2px 0 var(--gold-hi);
+}
+.settings__note { margin: 0; font-size: 6px; line-height: 1.8; color: var(--locked); }
+/* Phones always get the list, so there is no mode to choose there. */
+@media (max-width: 767px) {
+  .settings__row--start { display: none; }
+}
+
+/* the line under the mode select saying the pick is remembered */
+.intro__remember { margin: 10px 0 0; font-size: 13px; color: var(--locked); }
+
+/* --------------------------------------------------------------------------
+   22. PROJECT PAGE NAVIGATION (previous / back to list / next)
+   -------------------------------------------------------------------------- */
+.project-nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  gap: 14px;
+  max-width: 860px;
+  /* The room underneath is the corner MAP pipe's: scrolled to the end, the
+     row sits above it instead of under it. Padding, not margin: a bottom
+     margin here merges with the page's and adds no room at all. */
+  margin: 40px auto 0;
+  padding: 0 18px 130px;
+  font-family: var(--font-pixel);
+}
+.project-nav__list,
+.project-nav__step {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  color: var(--gold);
+  text-decoration: none;
+  background: var(--panel-alt);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, .3);
+}
+.project-nav__list { grid-column: 2; font-size: 9px; text-align: center; }
+.project-nav__step--prev { grid-column: 1; text-align: left; }
+.project-nav__step--next { grid-column: 3; text-align: right; }
+.project-nav__step.is-empty { visibility: hidden; }
+.project-nav__dir  { font-size: 9px; }
+.project-nav__name { font-size: 7px; line-height: 1.6; color: var(--text-invert); }
+.project-nav__list:hover,
+.project-nav__step:hover { background: var(--panel-alt-hi); }
+
+/* On a phone: the two arrows side by side, BACK TO LIST across the top. */
+@media (max-width: 560px) {
+  .project-nav { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .project-nav__list { grid-column: 1 / -1; grid-row: 1; }
+  .project-nav__step--prev { grid-column: 1; grid-row: 2; }
+  .project-nav__step--next { grid-column: 2; grid-row: 2; }
+  .project-nav__step.is-empty { display: none; }
+}
+
+/* BACK TO LIST lands on the project's own card, clear of the sticky HUD. */
+.plainlist__item { scroll-margin-top: calc(var(--hud-h) + 16px); }
