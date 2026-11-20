@@ -2,8 +2,9 @@
    SITE — shared behaviour for every page
    --------------------------------------------------------------------------
    Handles: the pipe-warp screen transition, the optional Web Audio sound
-   effects (off by default, no audio files anywhere), and the
-   prefers-reduced-motion escape hatch.
+   effects (off by default, no audio files anywhere), the SETTINGS panel in
+   the top bar, the previous / next row at the bottom of a project page, and
+   the prefers-reduced-motion escape hatch.
 
    Exposed as window.SITE so js/map.js can reuse it.
    ========================================================================== */
@@ -11,6 +12,7 @@
   'use strict';
 
   var STORE_SOUND = 'pixel-portfolio:sound';
+  var STORE_START = 'pixel-portfolio:start';   // 'map' | 'list'; absent = ask
 
   /* --- tiny localStorage wrapper; private-mode safe ---------------------- */
   function read(key, fallback) {
@@ -27,8 +29,8 @@
 
   /* ======================================================================
      SOUND — all generated with the Web Audio API. No files, no downloads.
-     Off by default; the user opts in with the HUD speaker button and the
-     choice is remembered.
+      Off by default; the user turns it on in SETTINGS and the choice is
+     remembered.
      ====================================================================== */
   var sfx = {
     enabled: read(STORE_SOUND, 'off') === 'on',
@@ -92,8 +94,9 @@
       for (var i = 0; i < notes.length; i++) this.tone(notes[i], i * 0.055, 0.12, 'square', 0.05);
     },
 
-    toggle: function () {
-      this.enabled = !this.enabled;
+    toggle: function () { return this.set(!this.enabled); },
+    set: function (on) {
+      this.enabled = !!on;
       write(STORE_SOUND, this.enabled ? 'on' : 'off');
       if (this.enabled) this.select();
       return this.enabled;
@@ -260,16 +263,8 @@
       if (ev.persisted) restoredFromCache();
     });
 
-    /* Sound toggle button in the HUD. */
-    var toggle = document.querySelector('[data-sound-toggle]');
-    if (toggle) {
-      var paint = function () {
-        toggle.setAttribute('aria-pressed', sfx.enabled ? 'true' : 'false');
-        toggle.textContent = sfx.enabled ? 'SFX ON' : 'SFX OFF';
-      };
-      paint();
-      toggle.addEventListener('click', function () { sfx.toggle(); paint(); });
-    }
+    bindSettings();
+    buildProjectNav();
 
     /* Any link marked data-warp gets the transition instead of a hard nav. */
     document.addEventListener('click', function (ev) {
@@ -299,6 +294,147 @@
     boot();
   }
 
+  /* ======================================================================
+     SETTINGS — the gear in the top bar
+     Two preferences, both kept on this device: which mode the site opens
+     in (the script in index.html's <head> reads it) and whether sound is
+     on. The mode row is hidden on phones, which always get the list.
+     ====================================================================== */
+  function startPref() {
+    var v = read(STORE_START, 'ask');
+    return v === 'map' || v === 'list' ? v : 'ask';
+  }
+  function setStartPref(v) {
+    if (v === 'map' || v === 'list') write(STORE_START, v);
+    else { try { localStorage.removeItem(STORE_START); } catch (e) { /* ignore */ } }
+  }
+
+  function bindSettings() {
+    var btn = document.querySelector('[data-settings]');
+    if (!btn) return;
+    var panel = null;
+
+    function option(group, value, label) {
+      return '<button type="button" data-' + group + '="' + value + '">' + label + '</button>';
+    }
+
+    function paint() {
+      var start = startPref(), sound = sfx.enabled ? 'on' : 'off';
+      var opts = panel.querySelectorAll('[data-start], [data-sound]');
+      for (var i = 0; i < opts.length; i++) {
+        var o = opts[i];
+        var on = o.hasAttribute('data-start') ? o.getAttribute('data-start') === start
+                                              : o.getAttribute('data-sound') === sound;
+        o.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    }
+
+    function build() {
+      panel = document.createElement('div');
+      panel.className = 'settings';
+      panel.id = 'settings-panel';
+      panel.setAttribute('role', 'dialog');
+      panel.setAttribute('aria-label', 'Settings');
+      panel.hidden = true;
+      panel.innerHTML =
+        '<p class="settings__title">SETTINGS</p>' +
+        '<div class="settings__row settings__row--start" role="group" aria-labelledby="set-start">' +
+          '<span class="settings__label" id="set-start">OPEN THE SITE IN</span>' +
+          '<span class="settings__opts">' +
+            option('start', 'ask', 'ASK ME') + option('start', 'map', 'ADVENTURE') +
+            option('start', 'list', 'LIST VIEW') +
+          '</span>' +
+        '</div>' +
+        '<div class="settings__row" role="group" aria-labelledby="set-sound">' +
+          '<span class="settings__label" id="set-sound">SOUND</span>' +
+          '<span class="settings__opts">' + option('sound', 'on', 'ON') + option('sound', 'off', 'OFF') + '</span>' +
+        '</div>' +
+        '<p class="settings__note">SAVED ON THIS DEVICE.</p>';
+      btn.parentNode.insertBefore(panel, btn.nextSibling);   // next in Tab order
+      btn.setAttribute('aria-controls', panel.id);
+
+      panel.addEventListener('click', function (ev) {
+        var o = ev.target.closest('button');
+        if (!o) return;
+        if (o.hasAttribute('data-start')) setStartPref(o.getAttribute('data-start'));
+        if (o.hasAttribute('data-sound')) sfx.set(o.getAttribute('data-sound') === 'on');
+        paint();
+      });
+    }
+
+    function place() {
+      var r = btn.getBoundingClientRect();
+      panel.style.top   = Math.round(r.bottom + 10) + 'px';
+      panel.style.right = Math.max(12, Math.round(window.innerWidth - r.right)) + 'px';
+    }
+
+    function open() {
+      if (!panel) build();
+      paint();
+      panel.hidden = false;
+      place();
+      btn.setAttribute('aria-expanded', 'true');
+    }
+    /* Focus goes back to the gear only when closed from the keyboard; after
+       a click it is let go, so the map's arrow keys and Enter work again. */
+    function close(keyboard) {
+      if (!panel || panel.hidden) return;
+      panel.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      if (keyboard) btn.focus();
+      else btn.blur();
+    }
+
+    btn.addEventListener('click', function () {
+      if (panel && !panel.hidden) close(false); else open();
+    });
+    document.addEventListener('click', function (ev) {
+      if (!panel || panel.hidden) return;
+      if (panel.contains(ev.target) || btn.contains(ev.target)) return;
+      close(false);
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && panel && !panel.hidden) close(true);
+    });
+    window.addEventListener('resize', function () { if (panel && !panel.hidden) place(); });
+  }
+
+  /* ======================================================================
+     PROJECT PAGES — previous / back to list / next
+     Built from js/projects.js, so a new project joins the row on its own.
+     Order is the map's (1-1, 1-2, ...); projects with no page are skipped.
+     The page keeps a plain BACK TO LIST link in case this never runs.
+     ====================================================================== */
+  function buildProjectNav() {
+    var nav = document.getElementById('project-nav');
+    var all = window.PROJECTS;
+    if (!nav || !all) return;
+
+    var here = window.location.pathname.split('/').pop();
+    var pages = all.filter(function (p) { return !p.locked && p.page; });
+    var at = -1;
+    for (var i = 0; i < pages.length; i++) {
+      if (pages[i].page.split('/').pop() === here) { at = i; break; }
+    }
+    if (at < 0) return;
+
+    function esc(t) {
+      return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    }
+    function step(p, dir) {
+      if (!p) return '<span class="project-nav__step project-nav__step--' + dir + ' is-empty" aria-hidden="true"></span>';
+      return '<a class="project-nav__step project-nav__step--' + dir + '" href="../' + esc(p.page) + '" rel="' + dir + '">' +
+               '<span class="project-nav__dir">' + (dir === 'prev' ? '&lt;&lt; PREVIOUS' : 'NEXT &gt;&gt;') + '</span>' +
+               '<span class="project-nav__name">' + esc(p.world) + ' ' + esc(p.title) + '</span>' +
+             '</a>';
+    }
+
+    nav.innerHTML =
+      step(pages[at - 1], 'prev') +
+      '<a class="project-nav__list" href="../pages/all-projects.html#' + esc(pages[at].id) + '">BACK TO LIST</a>' +
+      step(pages[at + 1], 'next');
+  }
+
   /* Middle of an element in viewport coordinates. */
   function centreOf(el) {
     if (!el || !el.getBoundingClientRect) return null;
@@ -308,6 +444,8 @@
 
   window.SITE = {
     sfx: sfx,
+    startPref: startPref,
+    setStartPref: setStartPref,
     warpTo: warpTo,
     reducedMotion: reducedMotion,
     centreOf: centreOf

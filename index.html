@@ -27,15 +27,23 @@
 
 <!-- Mode select (ADVENTURE or LIST VIEW). Decided here, before the first
      paint, so the map never flashes up first; js/intro.js does the rest.
-     Shown only on a fresh arrival at the map, on screens 768px and wider. -->
+     Only on a fresh arrival at the map, on screens 768px and wider. A
+     visitor who has picked before (or set it in SETTINGS) goes straight to
+     their choice instead. -->
 <script>
 (function () {
   try {
     if (location.hash) return;                                   /* a link straight to a project */
     if (!window.matchMedia('(min-width: 768px)').matches) return; /* phones already get a list */
-    if (sessionStorage.getItem('pixel-portfolio:mode') === 'map') return;   /* map already chosen */
+    var mode = sessionStorage.getItem('pixel-portfolio:mode');
+    if (mode === 'map') return;                                  /* map already chosen this visit */
     if (sessionStorage.getItem('pixel-portfolio:inpipe')) return;           /* climbing out of a pipe */
     if (document.referrer && new URL(document.referrer).origin === location.origin) return; /* already on the site */
+    if (!mode) {                                                 /* first arrival this visit */
+      var start = localStorage.getItem('pixel-portfolio:start');
+      if (start === 'map') return;
+      if (start === 'list') { location.replace('pages/all-projects.html'); return; }
+    }
     document.documentElement.classList.add('intro-open');
   } catch (e) { /* no storage: go straight to the map */ }
 }());
@@ -60,7 +68,7 @@
     <a class="hud__key" href="/resume.pdf">RESUME</a>
     <a href="pages/about.html" data-warp>ABOUT</a>
     <a href="pages/contact.html" data-warp>CONTACT</a>
-    <button type="button" class="hud__toggle" data-sound-toggle aria-pressed="false">SFX OFF</button>
+    <button type="button" class="hud__toggle hud__settings" data-settings aria-expanded="false" aria-haspopup="dialog"><svg class="hud__gear" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor"><rect x="3" y="0" width="3" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="3" y="1" width="3" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="2" y="2" width="5" height="1"/><rect x="0" y="3" width="4" height="1"/><rect x="5" y="3" width="4" height="1"/><rect x="0" y="4" width="3" height="1"/><rect x="6" y="4" width="3" height="1"/><rect x="0" y="5" width="4" height="1"/><rect x="5" y="5" width="4" height="1"/><rect x="2" y="6" width="5" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="3" y="7" width="3" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="3" y="8" width="3" height="1"/></svg><span class="hud__settings-label">SETTINGS</span></button>
   </nav>
 </header>
 
@@ -87,6 +95,7 @@
       </a>
     </div>
     <p class="intro__keys" aria-hidden="true">ARROWS TO CHOOSE &middot; ENTER TO GO</p>
+    <p class="intro__remember">Your pick is remembered on this device. Change it any time in SETTINGS.</p>
   </div>
 </div>
 

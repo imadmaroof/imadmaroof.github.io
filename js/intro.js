@@ -8,7 +8,9 @@
 
    Choosing ADVENTURE: the LIST VIEW card flies up into the LIST VIEW link in
    the top bar, which then pulses with a note saying that is the way to
-   switch. Choosing LIST VIEW is an ordinary link to the list page.
+   switch. Choosing LIST VIEW is an ordinary link to the list page. Either
+   choice is remembered on the device, so a later visit skips this screen
+   (SETTINGS in the top bar changes it).
 
    Exposed as window.INTRO so js/map.js can ignore keys while it is open.
    ========================================================================== */
@@ -34,8 +36,11 @@
   var current = 0;
 
   function reduced() { return !!(window.SITE && window.SITE.reducedMotion()); }
+  /* For this visit (so Back and reloads behave), and as the lasting
+     preference for next time, which SETTINGS can change. */
   function remember(mode) {
     try { sessionStorage.setItem(STORE_MODE, mode); } catch (e) { /* private mode */ }
+    if (window.SITE && window.SITE.setStartPref) window.SITE.setStartPref(mode);
   }
   function listLink() { return document.querySelector('.hud a[href$="all-projects.html"]'); }
 

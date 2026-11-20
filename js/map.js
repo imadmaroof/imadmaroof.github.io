@@ -882,6 +882,7 @@
       if (ev.target.matches && ev.target.matches('input, textarea, select')) return;
       if (window.INTRO && window.INTRO.isOpen()) return;   // mode select is up
       if (window.CHEST && window.CHEST.isOpen()) return;
+      if (ev.target.closest && ev.target.closest('.settings')) return;   // settings panel
 
       switch (ev.key) {
         case 'ArrowRight':
@@ -900,8 +901,10 @@
           break;
         case 'Enter':
         case ' ':
-          /* If a node button has focus the browser fires click for us. */
-          if (ev.target.closest && ev.target.closest('.node, .castle, .powerup, .ff-button')) return;
+          /* If a button or link has focus (a pipe, a ? block, the castle,
+             fast-forward, anything in the top bar) the browser presses it
+             for us. */
+          if (ev.target.closest && ev.target.closest('a, button')) return;
           ev.preventDefault();
           enter(selected);
           break;
